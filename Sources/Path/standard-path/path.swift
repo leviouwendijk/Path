@@ -1,6 +1,6 @@
-public typealias GenericPath = Path
+public typealias GenericPath = StandardPath
 
-public struct Path: SegmentConcatenable {
+public struct StandardPath: SegmentConcatenable {
     public var segments: [PathSegment]
     
     public init(
@@ -42,7 +42,7 @@ public struct Path: SegmentConcatenable {
         appendingSegments(strings)
     }
 
-    public func merged(appending secondObject: Path) -> Path {
+    public func merged(appending secondObject: StandardPath) -> StandardPath {
         var new = self
         new.appendingSegments(secondObject.segments)
         return new
