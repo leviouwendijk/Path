@@ -1,5 +1,3 @@
-public typealias GenericPath = StandardPath
-
 public struct StandardPath: SegmentConcatenable {
     public var segments: [PathSegment]
     

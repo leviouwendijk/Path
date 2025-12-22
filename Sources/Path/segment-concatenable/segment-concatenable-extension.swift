@@ -2,8 +2,12 @@ import Foundation
 
 extension SegmentConcatenable {
     public var concatenated: String {
-        segments.map { $0.value }
-        .joined(separator: "/")
+        return concatenate(using: "/")
+    }
+
+    public func concatenate(using separator: String) -> String {
+        return segments.map { $0.value }
+        .joined(separator: separator)
     }
 
     public func url(base: URL) -> URL {
