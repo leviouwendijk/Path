@@ -5,16 +5,21 @@ extension SegmentConcatenable {
         using separator: String,
         includeFileType: Bool = true
     ) -> String {
-        var comps = segments.map { $0.value }
+        var res: String = ""
+
+        let comps = segments.map { $0.value }
+        let joined = comps
+        .joined(separator: separator)
+
+        res.append(joined)
 
         if includeFileType {
             if let filetype {
-                comps.append(filetype.component)
+                res.append(filetype.component)
             }
         }
 
-        return comps
-        .joined(separator: separator)
+        return res
     }
 
     public func url(base: URL) -> URL {
