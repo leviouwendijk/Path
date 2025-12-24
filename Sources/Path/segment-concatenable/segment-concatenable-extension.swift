@@ -1,15 +1,18 @@
 import Foundation
 
 extension SegmentConcatenable {
-    public var concatenated: String {
-        return concatenate(using: "/")
-    }
-
-    public func concatenate(using separator: String) -> String {
+    public func concatenate(
+        using separator: String,
+        includeFileType: Bool = true
+    ) -> String {
         var comps = segments.map { $0.value }
-        if let filetype {
-            comps.append(filetype.component)
+
+        if includeFileType {
+            if let filetype {
+                comps.append(filetype.component)
+            }
         }
+
         return comps
         .joined(separator: separator)
     }
@@ -22,9 +25,29 @@ extension SegmentConcatenable {
         return res
     }
 
-    public func rendered(asRootPath: Bool) -> String {
-        let concat = self.concatenated
+    public func rendered(
+        using separator: String = "/",
+        asRootPath: Bool,
+        includeFileType: Bool = true
+    ) -> String {
+        // let concat = self.concatenated
+        let concat = concatenate(using: separator, includeFileType: includeFileType)
         let prefixed = asRootPath ? "/" + concat : concat
         return prefixed.removed_double_slashes
+    }
+}
+
+// convenience concatenate access
+extension SegmentConcatenable {
+    @available(*, message: "use func () instead")
+    public var concatenated: String {
+        return concatenate(using: "/")
+    }
+
+    public func concatenated(
+        using separator: String = "/",
+        includeFileType: Bool = true
+    ) -> String {
+        concatenate(using: separator, includeFileType: includeFileType)
     }
 }
