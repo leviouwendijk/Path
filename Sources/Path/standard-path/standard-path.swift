@@ -1,5 +1,6 @@
 public struct StandardPath: SegmentConcatenable {
     public var segments: [PathSegment]
+    // public var
     
     public init(
         segments: [PathSegment]
