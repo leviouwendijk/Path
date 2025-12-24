@@ -1,31 +1,42 @@
 public struct StandardPath: SegmentConcatenable {
     public var segments: [PathSegment]
-    // public var
+    public var filetype: AnyFileType?
     
     public init(
-        segments: [PathSegment]
+        segments: [PathSegment],
+        filetype: AnyFileType? = nil
     ) {
         self.segments = segments
+        self.filetype = filetype
     }
 
     public init(
-        _ segments: [PathSegment]
+        _ segments: [PathSegment],
+        filetype: AnyFileType? = nil
     ) {
         self.segments = segments
+        self.filetype = filetype
     }
+}
+
+// variadic
+extension StandardPath {
+    // public init(
+    //     _ segments: [String]
+    // ) {
+    //     self.segments = segments.map( { .init(value: $0, type: nil) } )
+    // }
 
     public init(
-        _ segments: [String]
+        _ segments: String...,
+        filetype: AnyFileType? = nil
     ) {
         self.segments = segments.map( { .init(value: $0, type: nil) } )
+        self.filetype = filetype
     }
+}
 
-    public init(
-        _ segments: String...
-    ) {
-        self.segments = segments.map( { .init(value: $0, type: nil) } )
-    }
-
+extension StandardPath {
     public mutating func appendingSegments(_ segments: [PathSegment]) -> Void {
         for s in segments {
             self.segments.append(s)

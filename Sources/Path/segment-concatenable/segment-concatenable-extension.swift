@@ -6,7 +6,11 @@ extension SegmentConcatenable {
     }
 
     public func concatenate(using separator: String) -> String {
-        return segments.map { $0.value }
+        var comps = segments.map { $0.value }
+        if let filetype {
+            comps.append(filetype.component)
+        }
+        return comps
         .joined(separator: separator)
     }
 
