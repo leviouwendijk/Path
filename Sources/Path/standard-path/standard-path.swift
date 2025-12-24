@@ -21,11 +21,13 @@ public struct StandardPath: SegmentConcatenable {
 
 // variadic
 extension StandardPath {
-    // public init(
-    //     _ segments: [String]
-    // ) {
-    //     self.segments = segments.map( { .init(value: $0, type: nil) } )
-    // }
+    public init(
+        _ segments: [String],
+        filetype: AnyFileType? = nil
+    ) {
+        self.segments = segments.map( { .init(value: $0, type: nil) } )
+        self.filetype = filetype
+    }
 
     public init(
         _ segments: String...,
