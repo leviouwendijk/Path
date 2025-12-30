@@ -22,10 +22,27 @@ extension SegmentConcatenable {
         return res
     }
 
-    public func url(base: URL) -> URL {
+    public func url(
+        base: URL,
+        includeFileType: Bool = true
+    ) -> URL {
+        guard !segments.isEmpty else { return base }
+
         var res = base
-        for i in segments {
-            res = res.appendingPathComponent(i.value)
+
+        let seg_n = segments.count
+        let last_seg_idx = seg_n - 1
+
+        for (idx, segment) in segments.enumerated() {
+            if (idx == last_seg_idx) && (includeFileType), let filetype {
+                let filetyped_segment = segment + filetype
+
+                res = res.appendingPathComponent(
+                    filetyped_segment.value
+                )
+            } else {
+                res = res.appendingPathComponent(segment.value)
+            }
         }
         return res
     }

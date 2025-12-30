@@ -18,4 +18,3 @@ public struct PathSegment: PathSegmentable {
         self.type = type
     }
 }
-
