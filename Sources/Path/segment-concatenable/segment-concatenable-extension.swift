@@ -47,6 +47,13 @@ extension SegmentConcatenable {
         return res
     }
 
+    public func root_url(
+        includeFileType: Bool = true
+    ) -> URL {
+        let root = URL(fileURLWithPath: "/", isDirectory: true)
+        return url(base: root, includeFileType: includeFileType)
+    }
+
     public func rendered(
         using separator: String = "/",
         asRootPath: Bool,
