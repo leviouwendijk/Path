@@ -1,12 +1,25 @@
-// as convenient labelless API:
-// .init(.home, "my_path")
+// // as convenient labelless API:
+// // .init(.home, "my_path")
+// extension StandardPath {
+//     public init(
+//         _ components: any StandardPathComponent...,
+//         filetype: AnyFileType? = nil
+//     ) {
+//         self.segments = components.flatMap { $0.toPathSegments() }
+//         self.filetype = filetype
+//     }
+// }
 extension StandardPath {
     public init(
-        _ components: any StandardPathComponent...,
+        _ basepath: StandardPath,
+        _ segments: String...,
         filetype: AnyFileType? = nil
     ) {
-        self.segments = components.flatMap { $0.toPathSegments() }
-        self.filetype = filetype
+        self.init(
+            from: basepath,
+            segments,
+            filetype: filetype
+        )
     }
 }
 
@@ -62,3 +75,4 @@ extension StandardPath {
         self.init(from: basepath, segments, filetype: filetype)
     }
 }
+
