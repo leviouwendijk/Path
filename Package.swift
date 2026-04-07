@@ -11,6 +11,10 @@ let package = Package(
             name: "Path",
             targets: ["Path"]
         ),
+        .library(
+            name: "PathWeb",
+            targets: ["PathWeb"]
+        )
     ],
     dependencies: [
         .leviouwendijk.Methods,
