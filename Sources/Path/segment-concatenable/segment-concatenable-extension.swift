@@ -1,9 +1,20 @@
 import Foundation
 
 extension SegmentConcatenable {
+    @available(*, message: "Use filetype instead of includeFileType")
     public func concatenate(
         using separator: String,
         includeFileType: Bool = true
+    ) -> String {
+        return concatenate(
+            using: separator,
+            filetype: includeFileType
+        )
+    }
+
+    public func concatenate(
+        using separator: String,
+        filetype includeFileType: Bool = true
     ) -> String {
         var res: String = ""
 
@@ -54,15 +65,39 @@ extension SegmentConcatenable {
         return url(base: root, includeFileType: includeFileType)
     }
 
+    @available(*, message: "superseded by path(as:, separator: , filetype:)")
     public func rendered(
         using separator: String = "/",
         asRootPath: Bool,
         includeFileType: Bool = true
     ) -> String {
         // let concat = self.concatenated
-        let concat = concatenate(using: separator, includeFileType: includeFileType)
+        let concat = concatenate(
+            using: separator,
+            filetype: includeFileType
+        )
         let prefixed = asRootPath ? "/" + concat : concat
         return prefixed.removed_double_slashes
+    }
+}
+
+extension SegmentConcatenable {
+    public func path(
+        as relativity: PathRelativity,
+        separator: String = "/",
+        filetype: Bool = true
+    ) -> String {
+        let concat = concatenate(
+            using: separator,
+            filetype: filetype
+        )
+        var path: String = ""
+        if let prefix = relativity.prefix {
+            path += prefix
+        }
+        path += concat
+
+        return path.removed_double_slashes
     }
 }
 
@@ -70,7 +105,7 @@ extension SegmentConcatenable {
 extension SegmentConcatenable {
     @available(*, message: "use func () instead")
     public var concatenated: String {
-        return concatenate(using: "/")
+        return concatenate(using: "/", filetype: true)
     }
 
     public func concatenated(
