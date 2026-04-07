@@ -2,7 +2,7 @@ public enum PathRelativity: String, RawRepresentable, Sendable, Codable {
     case root
     case relative
 
-    var prefix: String? {
+    public var prefix: String? {
         switch self {
         case .root:
             return "/"

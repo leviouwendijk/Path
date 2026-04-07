@@ -29,10 +29,12 @@ public extension StandardEnvironmentPath {
 
 public extension StandardEnvironmentPath {
     var root_string: String {
-        standard_path.rendered(asRootPath: true, includeFileType: true)
+        // standard_path.rendered(asRootPath: true, includeFileType: true)
+        return standard_path.render(as: .root, filetype: true)
     }
 
     var directory_string: String {
-        standard_path.rendered(asRootPath: true, includeFileType: false)
+        // standard_path.rendered(asRootPath: true, includeFileType: false)
+        return standard_path.render(as: .root, filetype: false)
     }
 }

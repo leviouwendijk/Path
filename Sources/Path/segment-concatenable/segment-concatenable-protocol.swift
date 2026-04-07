@@ -8,14 +8,14 @@ public protocol SegmentConcatenable: Sendable, Codable, Equatable {
         includeFileType: Bool
     ) -> String
 
-    @available(*, message: "superseded by path()")
+    @available(*, message: "superseded by render()")
     func rendered(
         using separator: String,
         asRootPath: Bool,
         includeFileType: Bool
     ) -> String
 
-    func path(
+    func render(
         as relativity: PathRelativity,
         separator: String,
         filetype: Bool

@@ -65,7 +65,7 @@ extension SegmentConcatenable {
         return url(base: root, includeFileType: includeFileType)
     }
 
-    @available(*, message: "superseded by path(as:, separator: , filetype:)")
+    @available(*, message: "superseded by render(as:, separator: , filetype:)")
     public func rendered(
         using separator: String = "/",
         asRootPath: Bool,
@@ -82,7 +82,7 @@ extension SegmentConcatenable {
 }
 
 extension SegmentConcatenable {
-    public func path(
+    public func render(
         as relativity: PathRelativity,
         separator: String = "/",
         filetype: Bool = true
