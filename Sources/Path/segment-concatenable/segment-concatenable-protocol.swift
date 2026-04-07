@@ -1,4 +1,4 @@
-public protocol SegmentConcatenable: Sendable, Codable {
+public protocol SegmentConcatenable: Sendable, Codable, Equatable {
     var segments: [PathSegment] { get set }
     var filetype: AnyFileType? { get }
     // var concatenated: String { get }
