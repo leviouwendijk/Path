@@ -15,17 +15,20 @@ public enum PathScanWarning: Sendable, Codable, Equatable {
 
 public struct PathTraversalPlan: Sendable, Codable, Equatable {
     public let root: URL
+    public let anchorDirectory: URL
     public let includes: [PathExpression]
     public let excludes: [PathExpression]
     public let selections: [PathSelectionExpression]
 
     public init(
         root: URL,
+        anchorDirectory: URL,
         includes: [PathExpression],
         excludes: [PathExpression],
         selections: [PathSelectionExpression]
     ) {
         self.root = root.standardizedFileURL
+        self.anchorDirectory = anchorDirectory.standardizedFileURL
         self.includes = includes
         self.excludes = excludes
         self.selections = selections
@@ -80,6 +83,7 @@ public enum PathScanCompiler {
         relativeTo anchor: PathAnchor = .cwd
     ) -> CompiledPathScanPlan {
         let warnings = analyze(specification)
+        let anchorDirectory = anchor.directory_url.standardizedFileURL
 
         var buckets: [URL: TraversalBuilder] = [:]
 
@@ -107,6 +111,7 @@ public enum PathScanCompiler {
             .map {
                 PathTraversalPlan(
                     root: $0.root,
+                    anchorDirectory: anchorDirectory,
                     includes: $0.includes,
                     excludes: specification.excludes,
                     selections: $0.selections
@@ -137,7 +142,8 @@ public enum PathScanner {
             for entry in try walker.walk() {
                 if isExcluded(
                     entry,
-                    excludes: traversal.excludes
+                    excludes: traversal.excludes,
+                    anchorDirectory: traversal.anchorDirectory
                 ) {
                     continue
                 }
@@ -146,7 +152,8 @@ public enum PathScanner {
                     matches(
                         entry: entry,
                         expression: $0,
-                        root: traversal.root
+                        root: traversal.root,
+                        anchorDirectory: traversal.anchorDirectory
                     )
                 }
 
@@ -155,7 +162,8 @@ public enum PathScanner {
                     guard matches(
                         entry: entry,
                         expression: selection.path,
-                        root: traversal.root
+                        root: traversal.root,
+                        anchorDirectory: traversal.anchorDirectory
                     ) else {
                         return nil
                     }
@@ -270,34 +278,72 @@ private extension PathScanCompiler {
 private extension PathScanner {
     static func isExcluded(
         _ entry: PathWalkEntry,
-        excludes: [PathExpression]
+        excludes: [PathExpression],
+        anchorDirectory: URL
     ) -> Bool {
         excludes.contains { exclude in
-            let excludeRoot = exclude.scanRoot()
-
-            guard let relativePath = relativePathIfDescendant(
-                entry,
-                under: excludeRoot
-            ) else {
-                return false
-            }
-
-            guard terminalHintMatches(
-                exclude.terminalHint,
-                type: entry.type
-            ) else {
-                return false
-            }
-
-            return exclude.scanPattern.matches(relativePath)
+            matchesConcrete(
+                entry: entry,
+                expression: exclude,
+                anchorDirectory: anchorDirectory
+            ) || matchesPattern(
+                entry: entry,
+                expression: exclude,
+                root: exclude.scanRoot(
+                    relativeTo: .directoryURL(anchorDirectory)
+                )
+            )
         }
     }
 
     static func matches(
         entry: PathWalkEntry,
         expression: PathExpression,
+        root: URL,
+        anchorDirectory: URL
+    ) -> Bool {
+        matchesConcrete(
+            entry: entry,
+            expression: expression,
+            anchorDirectory: anchorDirectory
+        ) || matchesPattern(
+            entry: entry,
+            expression: expression,
+            root: root
+        )
+    }
+
+    static func matchesConcrete(
+        entry: PathWalkEntry,
+        expression: PathExpression,
+        anchorDirectory: URL
+    ) -> Bool {
+        guard let concreteURL = concreteURL(
+            for: expression,
+            relativeTo: anchorDirectory
+        ) else {
+            return false
+        }
+
+        guard terminalHintMatches(
+            expression.terminalHint,
+            type: entry.type
+        ) else {
+            return false
+        }
+
+        return concreteURL == entry.url
+    }
+
+    static func matchesPattern(
+        entry: PathWalkEntry,
+        expression: PathExpression,
         root: URL
     ) -> Bool {
+        guard !expression.pattern.isConcrete else {
+            return false
+        }
+
         guard terminalHintMatches(
             expression.terminalHint,
             type: entry.type
@@ -313,6 +359,49 @@ private extension PathScanner {
         }
 
         return expression.scanPattern.matches(relativePath)
+    }
+
+    static func concreteURL(
+        for expression: PathExpression,
+        relativeTo anchorDirectory: URL
+    ) -> URL? {
+        guard expression.pattern.isConcrete else {
+            return nil
+        }
+
+        let baseURL = expression.anchor
+            .resolved(relativeTo: .directoryURL(anchorDirectory))
+            .directory_url
+
+        var components = expression.pattern.staticPrefixStrings
+        var filetype: AnyFileType?
+
+        if expression.terminalHint != .directory,
+           let last = components.last,
+           let parsedType = try? AnyFileType(filename: last) {
+            let stem = String(
+                last.dropLast(parsedType.component.count)
+            )
+
+            if !stem.isEmpty {
+                components[components.count - 1] = stem
+                filetype = parsedType
+            }
+        }
+
+        if components.isEmpty {
+            return baseURL.standardizedFileURL
+        }
+
+        return StandardPath(
+            components,
+            filetype: filetype
+        )
+        .url(
+            base: baseURL,
+            filetype: expression.terminalHint != .directory
+        )
+        .standardizedFileURL
     }
 
     static func terminalHintMatches(
