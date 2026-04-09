@@ -14,15 +14,24 @@ let package = Package(
         .library(
             name: "PathWeb",
             targets: ["PathWeb"]
-        )
+        ),
+        .library(
+            name: "PathParsing",
+            targets: ["PathParsing"]
+        ),
     ],
     dependencies: [
         .leviouwendijk.Methods,
         .leviouwendijk.ProtocolComponents,
+        .leviouwendijk.Parsing,
+        .leviouwendijk.Position,
     ],
     targets: [
         .target(
             name: "Path",
+            dependencies: [
+                .leviouwendijk.Position,
+            ]
         ),
         .target(
             name: "PathWeb",
@@ -30,6 +39,13 @@ let package = Package(
                 "Path",
                 .leviouwendijk.Methods,
                 .leviouwendijk.ProtocolComponents,
+            ]
+        ),
+        .target(
+            name: "PathParsing",
+            dependencies: [
+                "Path",
+                .leviouwendijk.Parsing,
             ]
         ),
         // .testTarget(
@@ -228,6 +244,8 @@ struct LeviOuwendijkCatalog {
     let Variables = DependencyCatalog.Ref("Variables")
     let Writers = DependencyCatalog.Ref("Writers")
     let ProtocolComponents = DependencyCatalog.Ref("ProtocolComponents")
+    let Parsing = DependencyCatalog.Ref("Parsing")
+    let Position = DependencyCatalog.Ref("Position")
 
     let plate = DependencyCatalog.Ref("plate")
     let Structures = DependencyCatalog.Ref("Structures")

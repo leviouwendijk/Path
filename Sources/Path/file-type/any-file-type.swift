@@ -18,6 +18,29 @@ public enum AnyFileType: Sendable, Codable, Hashable {
     case model3D(Model3DFile)
     case config(ConfigFile)
 
+    // Ordered by filename classification precedence.
+    // First matching family wins for overlapping extensions.
+    internal static let filenameClassificationOrder: [any FileType.Type] = [
+        CodeFile.self,
+        DocumentFile.self,
+        ConfigFile.self,
+        CryptographicFile.self,
+        SpreadsheetFile.self,
+        PresentationFile.self,
+        PhotoFile.self,
+        AudioFile.self,
+        VideoFile.self,
+        ArchiveFile.self,
+        FontFile.self,
+        DiskImageFile.self,
+        DatabaseFile.self,
+        EmailFile.self,
+        CalendarFile.self,
+        Model3DFile.self,
+        DataFile.self,
+        TextFile.self
+    ]
+
     public init(_ value: any FileType) {
         switch value {
         case let v as TextFile:          self = .text(v)

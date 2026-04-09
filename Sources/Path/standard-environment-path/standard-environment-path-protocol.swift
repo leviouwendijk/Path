@@ -8,14 +8,14 @@ public extension StandardEnvironmentPath {
     /// The URL represented by `standard_path` (includes filetype if present).
     var root_url: URL {
         standard_path
-            .root_url(includeFileType: true)
+            .root_url(filetype: true)
             .standardizedFileURL
     }
 
     /// Treat `standard_path` as a directory (ignores filetype).
     var directory_url: URL {
         standard_path
-            .root_url(includeFileType: false)
+            .root_url(filetype: false)
             .standardizedFileURL
     }
 

@@ -1,13 +1,31 @@
 {
-  "originHash" : "4f12b88afd69e281591af4814da8c7afe625db5ae65d4a6bb9d1b740af32b760",
+  "originHash" : "6e0d892b6cdacb2f54c2af37f42f05552580be346afecef2f6c5d594a1cf9af7",
   "pins" : [
     {
       "identity" : "methods",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/leviouwendijk/Methods",
+      "location" : "https://github.com/leviouwendijk/Methods.git",
       "state" : {
         "branch" : "master",
         "revision" : "47d7bf31c1e547238c1900fe4a1f6961b6cc19bb"
+      }
+    },
+    {
+      "identity" : "parsing",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/leviouwendijk/Parsing.git",
+      "state" : {
+        "branch" : "master",
+        "revision" : "2929fa73fb0d2a59c52ad8ba612acef56925b3a8"
+      }
+    },
+    {
+      "identity" : "position",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/leviouwendijk/Position.git",
+      "state" : {
+        "branch" : "master",
+        "revision" : "70fd78230c3452d9a4471222d64324a2c084351d"
       }
     },
     {

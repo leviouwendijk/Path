@@ -35,7 +35,7 @@ extension SegmentConcatenable {
 
     public func url(
         base: URL,
-        includeFileType: Bool = true
+        filetype include_filetype: Bool = true
     ) -> URL {
         guard !segments.isEmpty else { return base }
 
@@ -45,7 +45,7 @@ extension SegmentConcatenable {
         let last_seg_idx = seg_n - 1
 
         for (idx, segment) in segments.enumerated() {
-            if (idx == last_seg_idx) && (includeFileType), let filetype {
+            if (idx == last_seg_idx) && (include_filetype), let filetype {
                 let filetyped_segment = segment + filetype
 
                 res = res.appendingPathComponent(
@@ -59,10 +59,10 @@ extension SegmentConcatenable {
     }
 
     public func root_url(
-        includeFileType: Bool = true
+        filetype include_filetype: Bool = true
     ) -> URL {
         let root = URL(fileURLWithPath: "/", isDirectory: true)
-        return url(base: root, includeFileType: includeFileType)
+        return url(base: root, filetype: include_filetype)
     }
 
     @available(*, message: "superseded by render(as:, separator: , filetype:)")
