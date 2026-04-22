@@ -2,6 +2,7 @@ import Foundation
 
 public struct PathSandbox: Sendable, Codable, Equatable {
     public let root: StandardPath
+    public let tree: PathTree
 
     public init(
         root: StandardPath
@@ -10,21 +11,21 @@ public struct PathSandbox: Sendable, Codable, Equatable {
             throw PathSandboxError.rootMustBeDirectory(root)
         }
 
-        self.root = PathNormalization.root(root)
+        let normalized_root = PathNormalization.root(root)
+
+        self.root = normalized_root
+        self.tree = PathTree(root: normalized_root)
     }
 
     public func sandbox(
         _ path: StandardPath
     ) throws -> ScopedPath {
-        let relative = try PathNormalization.relative(to: root, path)
-
-        let absolute = StandardPath(
-            from: root,
-            relative.segments.map(\.value),
-            filetype: relative.filetype
+        let relative = try PathNormalization.relative(
+            to: root,
+            path
         )
 
-        let tree = PathTree(root: root)
+        let absolute = try tree.appending(relative)
 
         guard tree.descends(absolute) else {
             throw PathSandboxError.pathEscapesSandbox(

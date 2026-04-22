@@ -424,31 +424,44 @@ private extension PathScanner {
         _ entry: PathWalkEntry,
         under root: URL
     ) -> StandardPath? {
-        let rootPath = StandardPath(
+        let root_path = StandardPath(
             fileURL: root,
             terminalHint: .directory,
             inferFileType: false
         )
 
-        let candidate = entry.absolutePath
-
-        let rootSegments = rootPath.segments.map(\.value)
-        let candidateSegments = candidate.segments.map(\.value)
-
-        guard
-            candidateSegments.count >= rootSegments.count,
-            Array(candidateSegments.prefix(rootSegments.count)) == rootSegments
-        else {
-            return nil
-        }
-
-        let relativeSegments = Array(
-            candidate.segments.dropFirst(rootSegments.count)
-        )
-
-        return StandardPath(
-            relativeSegments,
-            filetype: candidate.filetype
-        )
+        return entry.absolutePath.relative(to: root_path)
     }
+
+    // static func relativePathIfDescendant(
+    //     _ entry: PathWalkEntry,
+    //     under root: URL
+    // ) -> StandardPath? {
+    //     let rootPath = StandardPath(
+    //         fileURL: root,
+    //         terminalHint: .directory,
+    //         inferFileType: false
+    //     )
+
+    //     let candidate = entry.absolutePath
+
+    //     let rootSegments = rootPath.segments.map(\.value)
+    //     let candidateSegments = candidate.segments.map(\.value)
+
+    //     guard
+    //         candidateSegments.count >= rootSegments.count,
+    //         Array(candidateSegments.prefix(rootSegments.count)) == rootSegments
+    //     else {
+    //         return nil
+    //     }
+
+    //     let relativeSegments = Array(
+    //         candidate.segments.dropFirst(rootSegments.count)
+    //     )
+
+    //     return StandardPath(
+    //         relativeSegments,
+    //         filetype: candidate.filetype
+    //     )
+    // }
 }

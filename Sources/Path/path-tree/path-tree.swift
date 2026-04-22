@@ -1,6 +1,6 @@
-public struct PathTree {
+public struct PathTree: Sendable, Codable, Equatable {
     public let root: StandardPath
-    
+
     public init(
         root: StandardPath
     ) {
@@ -10,29 +10,67 @@ public struct PathTree {
     public func descends(
         _ candidate: StandardPath
     ) -> Bool {
-        let root_segments = root.segments.map(\.value)
-        let candidate_segments = candidate.segments.map(\.value)
+        PathNormalization.root(candidate)
+        .descends(from: root)
+    }
 
-        guard candidate_segments.count >= root_segments.count else {
-            return false
+    // redundant? should be a not a direc descendant check but if any of the subpaths contain the candidate?
+    // public func contains(
+    //     _ candidate: StandardPath
+    // ) -> Bool {
+    //     descends(candidate)
+    // }
+
+    public func relative(
+        _ candidate: StandardPath
+    ) -> StandardPath? {
+        PathNormalization.root(candidate)
+        .relative(to: root)
+    }
+
+    public func require_relative(
+        _ candidate: StandardPath
+    ) throws -> StandardPath {
+        guard let relative = relative(candidate) else {
+            throw PathSandboxError.pathEscapesSandbox(
+                path: candidate,
+                root: root
+            )
         }
 
-        let prefix = Array(
-            candidate_segments.prefix(
-                root_segments.count
-            )
+        return relative
+    }
+
+    public func appending(
+        _ relative: StandardPath
+    ) throws -> StandardPath {
+        let normalized_relative = try PathNormalization.relative(
+            to: root,
+            relative
         )
 
-        return (prefix == root_segments)
+        return StandardPath(
+            from: root,
+            normalized_relative.segments.map(\.value),
+            filetype: normalized_relative.filetype
+        )
     }
 }
 
-extension PathTree {
-    public static func descends(
+public extension PathTree {
+    static func descends(
         from root: StandardPath,
         _ candidate: StandardPath
     ) -> Bool {
-        let path_tree = PathTree(root: root)
-        return path_tree.descends(candidate)
+        return PathTree(root: root)
+        .descends(candidate)
+    }
+
+    static func relative(
+        from root: StandardPath,
+        _ candidate: StandardPath
+    ) -> StandardPath? {
+        return PathTree(root: root)
+        .relative(candidate)
     }
 }

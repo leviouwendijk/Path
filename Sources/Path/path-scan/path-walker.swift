@@ -180,25 +180,32 @@ private extension PathWalker {
         from candidate: StandardPath,
         under rootPath: StandardPath
     ) -> StandardPath {
-        let rootSegments = rootPath.segments.map(\.value)
-        let candidateSegments = candidate.segments.map(\.value)
-
-        guard
-            candidateSegments.count >= rootSegments.count,
-            Array(candidateSegments.prefix(rootSegments.count)) == rootSegments
-        else {
-            return candidate
-        }
-
-        let relativeSegments = Array(
-            candidate.segments.dropFirst(rootSegments.count)
-        )
-
-        return StandardPath(
-            relativeSegments,
-            filetype: candidate.filetype
-        )
+        candidate.relative(to: rootPath) ?? candidate
     }
+
+    // func relativePath(
+    //     from candidate: StandardPath,
+    //     under rootPath: StandardPath
+    // ) -> StandardPath {
+    //     let rootSegments = rootPath.segments.map(\.value)
+    //     let candidateSegments = candidate.segments.map(\.value)
+
+    //     guard
+    //         candidateSegments.count >= rootSegments.count,
+    //         Array(candidateSegments.prefix(rootSegments.count)) == rootSegments
+    //     else {
+    //         return candidate
+    //     }
+
+    //     let relativeSegments = Array(
+    //         candidate.segments.dropFirst(rootSegments.count)
+    //     )
+
+    //     return StandardPath(
+    //         relativeSegments,
+    //         filetype: candidate.filetype
+    //     )
+    // }
 
     func resolvedVisitKey(
         for url: URL
