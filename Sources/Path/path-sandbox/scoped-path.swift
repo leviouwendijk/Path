@@ -25,19 +25,13 @@ public struct ScopedPath: StandardEnvironmentPath, Sendable, Codable, Equatable 
     }
 
     public func presentingRelative(
-        marker: String = ".",
         separator: String = "/",
         filetype: Bool = true
     ) -> String {
-        relative.present(
-            .init(
-                style: .relative(
-                    to: StandardPath.root,
-                    marker: marker
-                ),
-                separator: separator,
-                filetype: filetype
-            )
+        relative.render(
+            as: .relative,
+            separator: separator,
+            filetype: filetype
         )
     }
 }

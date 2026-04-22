@@ -68,3 +68,18 @@ public struct PathSandbox: Sendable, Codable, Equatable {
         path.root == root
     }
 }
+
+extension PathSandbox {
+    // init overloads
+    public init(
+        inside root: StandardPath
+    ) throws {
+        try self.init(root: root)
+    }
+
+    public init(
+        in root: StandardPath
+    ) throws {
+        try self.init(root: root)
+    }
+}

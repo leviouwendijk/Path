@@ -10,22 +10,15 @@ public struct PathTree: Sendable, Codable, Equatable {
     public func descends(
         _ candidate: StandardPath
     ) -> Bool {
-        PathNormalization.root(candidate)
-        .descends(from: root)
+        PathNormalization.path(candidate)
+            .descends(from: root)
     }
-
-    // redundant? should be a not a direc descendant check but if any of the subpaths contain the candidate?
-    // public func contains(
-    //     _ candidate: StandardPath
-    // ) -> Bool {
-    //     descends(candidate)
-    // }
 
     public func relative(
         _ candidate: StandardPath
     ) -> StandardPath? {
-        PathNormalization.root(candidate)
-        .relative(to: root)
+        PathNormalization.path(candidate)
+            .relative(to: root)
     }
 
     public func require_relative(
@@ -39,6 +32,20 @@ public struct PathTree: Sendable, Codable, Equatable {
         }
 
         return relative
+    }
+
+    public func contains(
+        segment: String
+    ) -> Bool {
+        root.segments.contains {
+            $0.value == segment
+        }
+    }
+
+    public func contains(
+        segment: PathSegment
+    ) -> Bool {
+        root.segments.contains(segment)
     }
 
     public func appending(
@@ -62,15 +69,15 @@ public extension PathTree {
         from root: StandardPath,
         _ candidate: StandardPath
     ) -> Bool {
-        return PathTree(root: root)
-        .descends(candidate)
+        PathTree(root: root)
+            .descends(candidate)
     }
 
     static func relative(
         from root: StandardPath,
         _ candidate: StandardPath
     ) -> StandardPath? {
-        return PathTree(root: root)
-        .relative(candidate)
+        PathTree(root: root)
+            .relative(candidate)
     }
 }

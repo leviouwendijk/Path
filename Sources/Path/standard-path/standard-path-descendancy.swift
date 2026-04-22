@@ -3,7 +3,7 @@ extension StandardPath {
         from root: StandardPath
     ) -> Bool {
         let normalized_root = PathNormalization.root(root)
-        let normalized_self = PathNormalization.root(self)
+        let normalized_self = PathNormalization.path(self)
 
         let root_segments = normalized_root.segments.map(\.value)
         let candidate_segments = normalized_self.segments.map(\.value)
@@ -23,7 +23,7 @@ extension StandardPath {
         to root: StandardPath
     ) -> StandardPath? {
         let normalized_root = PathNormalization.root(root)
-        let normalized_self = PathNormalization.root(self)
+        let normalized_self = PathNormalization.path(self)
 
         guard normalized_self.descends(from: normalized_root) else {
             return nil

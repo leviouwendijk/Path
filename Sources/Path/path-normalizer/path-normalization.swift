@@ -1,5 +1,5 @@
 public enum PathNormalization {
-    public static func root(
+    public static func path(
         _ path: StandardPath
     ) -> StandardPath {
         var normalized: [PathSegment] = []
@@ -27,6 +27,17 @@ public enum PathNormalization {
 
         return StandardPath(
             normalized,
+            filetype: path.filetype
+        )
+    }
+
+    public static func root(
+        _ path: StandardPath
+    ) -> StandardPath {
+        let normalized = Self.path(path)
+
+        return StandardPath(
+            normalized.segments,
             filetype: nil
         )
     }
