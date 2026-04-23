@@ -4,11 +4,25 @@ import Position
 
 public enum PathParsingCore {
     public struct ScannedPathToken: Sendable, Equatable {
-        let raw: String
-        let startOffset: Int
-        let wasQuoted: Bool
-        let quotedSelectionSuffix: String?
-        let quotedSelectionOffset: Int?
+        public let raw: String
+        public let startOffset: Int
+        public let wasQuoted: Bool
+        public let quotedSelectionSuffix: String?
+        public let quotedSelectionOffset: Int?
+        
+        public init(
+            raw: String,
+            startOffset: Int,
+            wasQuoted: Bool,
+            quotedSelectionSuffix: String?,
+            quotedSelectionOffset: Int?
+        ) {
+            self.raw = raw
+            self.startOffset = startOffset
+            self.wasQuoted = wasQuoted
+            self.quotedSelectionSuffix = quotedSelectionSuffix
+            self.quotedSelectionOffset = quotedSelectionOffset
+        }
     }
 
     @inline(__always)
