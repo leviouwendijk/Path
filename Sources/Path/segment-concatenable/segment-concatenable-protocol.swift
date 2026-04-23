@@ -1,6 +1,6 @@
 import FileTypes
 
-public protocol SegmentConcatenable: Sendable, Codable, Equatable {
+public protocol SegmentConcatenable: Sendable, Codable, Equatable, Hashable {
     var segments: [PathSegment] { get set }
     var filetype: AnyFileType? { get }
     // var concatenated: String { get }

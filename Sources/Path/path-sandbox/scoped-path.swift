@@ -1,6 +1,6 @@
 import Foundation
 
-public struct ScopedPath: StandardEnvironmentPath, Sendable, Codable, Equatable {
+public struct ScopedPath: StandardEnvironmentPath, Sendable, Codable, Equatable, Hashable {
     public let root: StandardPath
     public let relative: StandardPath
 
