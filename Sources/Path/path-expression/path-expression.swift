@@ -1,6 +1,6 @@
 import Foundation
 
-public struct PathExpression: Sendable, Codable, Equatable {
+public struct PathExpression: Sendable, Codable, Equatable, Hashable {
     public var anchor: PathExpressionAnchor
     public var pattern: PathPattern
 

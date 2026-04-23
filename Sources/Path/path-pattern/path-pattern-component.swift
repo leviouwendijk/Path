@@ -1,4 +1,4 @@
-public enum PathPatternComponent: Sendable, Codable, Equatable, ExpressibleByStringLiteral {
+public enum PathPatternComponent: Sendable, Codable, Equatable, Hashable, ExpressibleByStringLiteral {
     case literal(String)
     case any
     case recursive

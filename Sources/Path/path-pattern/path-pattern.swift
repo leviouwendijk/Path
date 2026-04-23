@@ -1,4 +1,4 @@
-public struct PathPattern: Sendable, Codable, Equatable {
+public struct PathPattern: Sendable, Codable, Equatable, Hashable {
     public var components: [PathPatternComponent]
     public var terminalHint: PathTerminalHint
 
