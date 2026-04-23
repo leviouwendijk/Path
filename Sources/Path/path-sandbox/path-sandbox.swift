@@ -1,4 +1,5 @@
 import Foundation
+import FileTypes
 
 public struct PathSandbox: Sendable, Codable, Equatable {
     public let root: StandardPath

@@ -1,3 +1,5 @@
+import FileTypes
+
 public struct StandardPath: SegmentConcatenable {
     public var segments: [PathSegment]
     public var filetype: AnyFileType?

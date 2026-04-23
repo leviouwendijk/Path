@@ -21,6 +21,7 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .leviouwendijk.FileTypes,
         .leviouwendijk.Methods,
         .leviouwendijk.ProtocolComponents,
         .leviouwendijk.Parsing,
@@ -31,6 +32,7 @@ let package = Package(
             name: "Path",
             dependencies: [
                 .leviouwendijk.Position,
+                .leviouwendijk.FileTypes,
             ]
         ),
         .target(
@@ -246,6 +248,7 @@ struct LeviOuwendijkCatalog {
     let ProtocolComponents = DependencyCatalog.Ref("ProtocolComponents")
     let Parsing = DependencyCatalog.Ref("Parsing")
     let Position = DependencyCatalog.Ref("Position")
+    let FileTypes = DependencyCatalog.Ref("FileTypes")
 
     let plate = DependencyCatalog.Ref("plate")
     let Structures = DependencyCatalog.Ref("Structures")

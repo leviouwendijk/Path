@@ -1,6 +1,15 @@
 {
-  "originHash" : "6e0d892b6cdacb2f54c2af37f42f05552580be346afecef2f6c5d594a1cf9af7",
+  "originHash" : "3d6960de368b15ffbb3a33462979780f054a63a319976ed6022caa7a2be46b27",
   "pins" : [
+    {
+      "identity" : "filetypes",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/leviouwendijk/FileTypes.git",
+      "state" : {
+        "branch" : "master",
+        "revision" : "77d9b8387e7df863e66dd4665a6f5181365ffe0d"
+      }
+    },
     {
       "identity" : "methods",
       "kind" : "remoteSourceControl",
@@ -16,7 +25,7 @@
       "location" : "https://github.com/leviouwendijk/Parsing.git",
       "state" : {
         "branch" : "master",
-        "revision" : "2929fa73fb0d2a59c52ad8ba612acef56925b3a8"
+        "revision" : "38e346697615fbb32fdac86e6528c18104d89334"
       }
     },
     {

@@ -1,3 +1,5 @@
+import FileTypes
+
 // strings
 public func + (lhs: PathSegment, rhs: String) -> PathSegment {
     var copy = lhs

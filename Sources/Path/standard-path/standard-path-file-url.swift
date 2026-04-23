@@ -1,4 +1,5 @@
 import Foundation
+import FileTypes
 
 extension StandardPath {
     public init(

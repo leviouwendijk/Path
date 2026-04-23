@@ -1,3 +1,5 @@
+import FileTypes
+
  // // as convenient labelless API:
  // // .init(.home, "my_path")
  // extension StandardPath {
