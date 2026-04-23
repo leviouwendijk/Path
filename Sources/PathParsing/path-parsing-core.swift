@@ -2,8 +2,8 @@ import Foundation
 import Parsing
 import Position
 
-enum PathParsingCore {
-    struct ScannedPathToken: Sendable, Equatable {
+public enum PathParsingCore {
+    public struct ScannedPathToken: Sendable, Equatable {
         let raw: String
         let startOffset: Int
         let wasQuoted: Bool
@@ -12,14 +12,14 @@ enum PathParsingCore {
     }
 
     @inline(__always)
-    static func isWhitespace(
+    public static func isWhitespace(
         _ ch: Character
     ) -> Bool {
         ch == " " || ch == "\t" || ch == "\n" || ch == "\r"
     }
 
     @inline(__always)
-    static func isExpressionBoundary(
+    public static func isExpressionBoundary(
         _ ch: Character
     ) -> Bool {
         isWhitespace(ch)
@@ -29,7 +29,7 @@ enum PathParsingCore {
             || ch == "}"
     }
 
-    static func loc(
+    public static func loc(
         in input: String,
         offset: Int
     ) -> Position? {
@@ -62,7 +62,7 @@ enum PathParsingCore {
 }
 
 extension PathParsingCore {
-    static func consumeWhitespace(
+    public static func consumeWhitespace(
         _ cursor: inout Cursor
     ) {
         while let ch = cursor.peek(), isWhitespace(ch) {
@@ -70,7 +70,7 @@ extension PathParsingCore {
         }
     }
 
-    static func consumeTrivia(
+    public static func consumeTrivia(
         _ cursor: inout Cursor
     ) {
         while true {
@@ -88,13 +88,13 @@ extension PathParsingCore {
         }
     }
 
-    static func consumeTrailingTrivia(
+    public static func consumeTrailingTrivia(
         _ cursor: inout Cursor
     ) {
         consumeTrivia(&cursor)
     }
 
-    static func consumeLineComment(
+    public static func consumeLineComment(
         _ cursor: inout Cursor
     ) -> Bool {
         guard let ch = cursor.peek() else {
@@ -136,7 +136,7 @@ extension PathParsingCore {
         return false
     }
 
-    static func readPathToken(
+    public static func readPathToken(
         _ cursor: inout Cursor,
         allowQuotedSelectionSuffix: Bool
     ) throws -> ScannedPathToken {
@@ -194,7 +194,7 @@ extension PathParsingCore {
         )
     }
 
-    static func readQuotedPath(
+    public static func readQuotedPath(
         _ cursor: inout Cursor
     ) throws -> String {
         guard let quote = cursor.peek(),
@@ -263,7 +263,7 @@ extension PathParsingCore {
         )
     }
 
-    static func readBracketSuffix(
+    public static func readBracketSuffix(
         _ cursor: inout Cursor
     ) -> String {
         guard cursor.peek() == "[" else {
