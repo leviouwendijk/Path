@@ -20,21 +20,28 @@ public extension StandardEnvironmentPath {
     }
 
     /// Convenience for “put a pdf named X in this directory”.
-    func pdf_url(filename: String) -> URL {
-        directory_url
-            .appendingPathComponent("\(filename).pdf")
-            .standardizedFileURL
+    func pdf_url(
+        filename: String
+    ) -> URL {
+        standard_path
+            .child
+            .file("\(filename).pdf")
+            .root_url
     }
 }
 
 public extension StandardEnvironmentPath {
     var root_string: String {
-        // standard_path.rendered(asRootPath: true, includeFileType: true)
-        return standard_path.render(as: .root, filetype: true)
+        standard_path.render(
+            as: .root,
+            filetype: true
+        )
     }
 
     var directory_string: String {
-        // standard_path.rendered(asRootPath: true, includeFileType: false)
-        return standard_path.render(as: .root, filetype: false)
+        standard_path.render(
+            as: .root,
+            filetype: false
+        )
     }
 }
