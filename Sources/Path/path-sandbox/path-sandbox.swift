@@ -1,7 +1,7 @@
 import Foundation
 import FileTypes
 
-public struct PathSandbox: Sendable, Codable, Equatable {
+public struct PathSandbox: Sendable, Codable, Equatable, Hashable {
     public let root: StandardPath
     public let tree: PathTree
 

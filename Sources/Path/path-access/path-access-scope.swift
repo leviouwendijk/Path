@@ -1,7 +1,7 @@
 import Foundation
 import FileTypes
 
-public struct PathAccessScope: Sendable, Codable, Equatable {
+public struct PathAccessScope: Sendable, Codable, Equatable, Hashable {
     public let sandbox: PathSandbox
     public let policy: PathAccessPolicy
 

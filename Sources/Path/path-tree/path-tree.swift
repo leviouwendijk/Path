@@ -1,7 +1,7 @@
 import Foundation
 import FileTypes
 
-public struct PathTree: Sendable, Codable, Equatable {
+public struct PathTree: Sendable, Codable, Equatable, Hashable {
     public var root: StandardPath
     public var children: [PathTreeNode]
 
