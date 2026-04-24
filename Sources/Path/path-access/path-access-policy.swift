@@ -1,13 +1,13 @@
 public struct PathAccessPolicy: Sendable, Codable, Equatable, Hashable {
     public var rules: [PathAccessRule]
-    public var defaultDecision: PathAccessDecision
+    public var `default`: PathAccessDecision
 
     public init(
         rules: [PathAccessRule] = [],
-        defaultDecision: PathAccessDecision = .allow
+        `default`: PathAccessDecision = .allow
     ) {
         self.rules = rules
-        self.defaultDecision = defaultDecision
+        self.`default` = `default`
     }
 
     public static let allowAll = Self()
@@ -35,7 +35,7 @@ public extension PathAccessPolicy {
         return .init(
             path: path,
             type: type,
-            decision: defaultDecision,
+            decision: `default`,
             matchedRule: nil
         )
     }
@@ -65,7 +65,7 @@ public extension PathAccessPolicy {
     ) -> Self {
         .init(
             rules: rules + self.rules,
-            defaultDecision: defaultDecision
+            default: `default`
         )
     }
 
@@ -74,7 +74,7 @@ public extension PathAccessPolicy {
     ) -> Self {
         .init(
             rules: self.rules + rules,
-            defaultDecision: defaultDecision
+            default: `default`
         )
     }
 }

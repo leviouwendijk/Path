@@ -66,11 +66,11 @@ public enum PathAccessParse {
 
     public static func policy(
         _ rules: [String],
-        defaultDecision: PathAccessDecision = .allow
+        `default`: PathAccessDecision = .allow
     ) throws -> PathAccessPolicy {
         .init(
             rules: try rules.map(rule),
-            defaultDecision: defaultDecision
+            default: `default`
         )
     }
 }
