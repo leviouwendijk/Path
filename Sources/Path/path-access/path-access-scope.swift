@@ -7,7 +7,7 @@ public struct PathAccessScope: Sendable, Codable, Equatable {
 
     public init(
         sandbox: PathSandbox,
-        policy: PathAccessPolicy = .workspaceDefault
+        policy: PathAccessPolicy = .defaults.workspace
     ) {
         self.sandbox = sandbox
         self.policy = policy
@@ -15,7 +15,7 @@ public struct PathAccessScope: Sendable, Codable, Equatable {
 
     public init(
         root: StandardPath,
-        policy: PathAccessPolicy = .workspaceDefault
+        policy: PathAccessPolicy = .defaults.workspace
     ) throws {
         self.sandbox = try .init(
             root: root
@@ -25,7 +25,7 @@ public struct PathAccessScope: Sendable, Codable, Equatable {
 
     public init(
         root: URL,
-        policy: PathAccessPolicy = .workspaceDefault
+        policy: PathAccessPolicy = .defaults.workspace
     ) throws {
         try self.init(
             root: StandardPath(

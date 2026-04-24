@@ -132,112 +132,219 @@ public struct PathExposureReport: Sendable, Codable, Equatable, Hashable {
 }
 
 public extension PathExposureReport {
-    var requiredFindings: [PathExposureFinding] {
-        findings.filter {
-            $0.action == .require_deny
+    var finding: FindingAPI {
+        .init(
+            report: self
+        )
+    }
+
+    var patch: PatchAPI {
+        .init(
+            report: self
+        )
+    }
+
+    var policy: PolicyAPI {
+        .init(
+            report: self
+        )
+    }
+
+    struct FindingAPI: Sendable, Codable, Equatable, Hashable {
+        public var report: PathExposureReport
+
+        public init(
+            report: PathExposureReport
+        ) {
+            self.report = report
+        }
+
+        public var required: [PathExposureFinding] {
+            report.findings.filter {
+                $0.action == .require_deny
+            }
+        }
+
+        public var suggested: [PathExposureFinding] {
+            report.findings.filter {
+                $0.action == .suggest_deny
+            }
+        }
+
+        public var warnings: [PathExposureFinding] {
+            report.findings.filter {
+                $0.action == .warn_only
+            }
+        }
+
+        public var all: [PathExposureFinding] {
+            report.findings
         }
     }
 
-    var suggestedFindings: [PathExposureFinding] {
-        findings.filter {
-            $0.action == .suggest_deny
+    struct PatchAPI: Sendable, Codable, Equatable, Hashable {
+        public var report: PathExposureReport
+
+        public init(
+            report: PathExposureReport
+        ) {
+            self.report = report
         }
-    }
 
-    var warningFindings: [PathExposureFinding] {
-        findings.filter {
-            $0.action == .warn_only
-        }
-    }
-
-    var requiredPatch: PathAccessPolicyPatch {
-        .prepending(
-            requiredFindings
-                .compactMap(\.suggestedDenyRule)
-                .deduplicatedAccessRules()
-        )
-    }
-
-    var suggestedPatch: PathAccessPolicyPatch {
-        .prepending(
-            suggestions
-                .map(\.rule)
-                .deduplicatedAccessRules()
-        )
-    }
-
-    var suggestedFindingPatch: PathAccessPolicyPatch {
-        .prepending(
-            suggestedFindings
-                .compactMap(\.suggestedDenyRule)
-                .deduplicatedAccessRules()
-        )
-    }
-
-    var allFindingPatch: PathAccessPolicyPatch {
-        .prepending(
-            findings
-                .compactMap(\.suggestedDenyRule)
-                .deduplicatedAccessRules()
-        )
-    }
-
-    func patch(
-        for suggestions: [PathDenySuggestion],
-        includeRequiredFindings: Bool = true
-    ) -> PathAccessPolicyPatch {
-        let requiredRules = includeRequiredFindings
-            ? requiredPatch.prependRules
-            : []
-
-        return .prepending(
-            (
-                requiredRules
-                    + suggestions.map(\.rule)
-            ).deduplicatedAccessRules()
-        )
-    }
-
-    func patch(
-        forSuggestionIDs ids: Set<String>,
-        includeRequiredFindings: Bool = true
-    ) -> PathAccessPolicyPatch {
-        patch(
-            for: suggestions.filtered(ids: ids),
-            includeRequiredFindings: includeRequiredFindings
-        )
-    }
-
-    func policy(
-        byApplying patch: PathAccessPolicyPatch,
-        to base: PathAccessPolicy
-    ) -> PathAccessPolicy {
-        base.applying(patch)
-    }
-
-    func policyWithRequiredDenials(
-        from base: PathAccessPolicy
-    ) -> PathAccessPolicy {
-        base.applying(requiredPatch)
-    }
-
-    func policyWithSuggestedDenials(
-        from base: PathAccessPolicy
-    ) -> PathAccessPolicy {
-        base.applying(suggestedPatch)
-    }
-
-    func policy(
-        from base: PathAccessPolicy,
-        selectedSuggestionIDs ids: Set<String>,
-        includeRequiredFindings: Bool = true
-    ) -> PathAccessPolicy {
-        base.applying(
-            patch(
-                forSuggestionIDs: ids,
-                includeRequiredFindings: includeRequiredFindings
+        public var required: PathAccessPolicyPatch {
+            .prepending(
+                report.finding.required
+                    .compactMap(\.suggestedDenyRule)
+                    .deduplicatedAccessRules()
             )
-        )
+        }
+
+        public var suggested: PathAccessPolicyPatch {
+            .prepending(
+                report.suggestions
+                    .map(\.rule)
+                    .deduplicatedAccessRules()
+            )
+        }
+
+        public var suggestedFindings: PathAccessPolicyPatch {
+            .prepending(
+                report.finding.suggested
+                    .compactMap(\.suggestedDenyRule)
+                    .deduplicatedAccessRules()
+            )
+        }
+
+        public var allFindings: PathAccessPolicyPatch {
+            .prepending(
+                report.finding.all
+                    .compactMap(\.suggestedDenyRule)
+                    .deduplicatedAccessRules()
+            )
+        }
+
+        public func selected(
+            _ suggestions: [PathDenySuggestion],
+            includeRequired: Bool = true
+        ) -> PathAccessPolicyPatch {
+            let requiredRules = includeRequired
+                ? required.prependRules
+                : []
+
+            return .prepending(
+                (
+                    requiredRules
+                        + suggestions.map(\.rule)
+                ).deduplicatedAccessRules()
+            )
+        }
+
+        public func selected(
+            ids: Set<String>,
+            includeRequired: Bool = true
+        ) -> PathAccessPolicyPatch {
+            selected(
+                report.suggestions.filtered(ids: ids),
+                includeRequired: includeRequired
+            )
+        }
+
+        public func selected(
+            ids: [String],
+            includeRequired: Bool = true
+        ) -> PathAccessPolicyPatch {
+            selected(
+                ids: Set(ids),
+                includeRequired: includeRequired
+            )
+        }
+    }
+
+    struct PolicyAPI: Sendable, Codable, Equatable, Hashable {
+        public var report: PathExposureReport
+
+        public init(
+            report: PathExposureReport
+        ) {
+            self.report = report
+        }
+
+        public func applying(
+            _ patch: PathAccessPolicyPatch,
+            to base: PathAccessPolicy
+        ) -> PathAccessPolicy {
+            base.applying(patch)
+        }
+
+        public func required(
+            from base: PathAccessPolicy
+        ) -> PathAccessPolicy {
+            base.applying(
+                report.patch.required
+            )
+        }
+
+        public func suggested(
+            from base: PathAccessPolicy
+        ) -> PathAccessPolicy {
+            base.applying(
+                report.patch.suggested
+            )
+        }
+
+        public func suggestedFindings(
+            from base: PathAccessPolicy
+        ) -> PathAccessPolicy {
+            base.applying(
+                report.patch.suggestedFindings
+            )
+        }
+
+        public func allFindings(
+            from base: PathAccessPolicy
+        ) -> PathAccessPolicy {
+            base.applying(
+                report.patch.allFindings
+            )
+        }
+
+        public func selected(
+            from base: PathAccessPolicy,
+            suggestions: [PathDenySuggestion],
+            includeRequired: Bool = true
+        ) -> PathAccessPolicy {
+            base.applying(
+                report.patch.selected(
+                    suggestions,
+                    includeRequired: includeRequired
+                )
+            )
+        }
+
+        public func selected(
+            from base: PathAccessPolicy,
+            ids: Set<String>,
+            includeRequired: Bool = true
+        ) -> PathAccessPolicy {
+            base.applying(
+                report.patch.selected(
+                    ids: ids,
+                    includeRequired: includeRequired
+                )
+            )
+        }
+
+        public func selected(
+            from base: PathAccessPolicy,
+            ids: [String],
+            includeRequired: Bool = true
+        ) -> PathAccessPolicy {
+            selected(
+                from: base,
+                ids: Set(ids),
+                includeRequired: includeRequired
+            )
+        }
     }
 }
 
