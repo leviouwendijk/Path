@@ -41,10 +41,8 @@ public enum PathLookup {
         )
 
         while true {
-            let candidate = StandardPath(
-                from: current,
-                name,
-                filetype: nil
+            let candidate = current.child.directory(
+                name
             )
 
             if PathExistence.isDirectory(
@@ -56,7 +54,7 @@ public enum PathLookup {
                 )
             }
 
-            guard let parent = current.parentDirectoryPath else {
+            guard let parent = current.parent() else {
                 return nil
             }
 
@@ -92,20 +90,5 @@ private extension PathLookup {
         }
 
         return true
-    }
-}
-
-private extension StandardPath {
-    var parentDirectoryPath: StandardPath? {
-        guard !segments.isEmpty else {
-            return nil
-        }
-
-        return StandardPath(
-            Array(
-                segments.dropLast()
-            ),
-            filetype: nil
-        )
     }
 }
