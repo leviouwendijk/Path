@@ -1,6 +1,27 @@
+import Foundation
 import FileTypes
 
 public extension PathAccessController {
+    func authorize(
+        _ url: URL,
+        rootIdentifier: PathAccessRootIdentifier? = nil,
+        type: PathSegmentType? = nil
+    ) throws -> AuthorizedPath {
+        let root = try root(
+            identifier: rootIdentifier
+        )
+        let scopedPath = try root.scope.scope(
+            url,
+            type: type
+        )
+
+        return try authorize(
+            scopedPath,
+            rootIdentifier: root.id,
+            type: type
+        )
+    }
+
     func authorize(
         _ scopedPaths: [ScopedPath],
         rootIdentifier: PathAccessRootIdentifier? = nil,
@@ -21,6 +42,20 @@ public extension PathAccessController {
         type: PathSegmentType? = nil
     ) throws -> [AuthorizedPath] {
         try paths.map {
+            try authorize(
+                $0,
+                rootIdentifier: rootIdentifier,
+                type: type
+            )
+        }
+    }
+
+    func authorize(
+        _ urls: [URL],
+        rootIdentifier: PathAccessRootIdentifier? = nil,
+        type: PathSegmentType? = nil
+    ) throws -> [AuthorizedPath] {
+        try urls.map {
             try authorize(
                 $0,
                 rootIdentifier: rootIdentifier,
