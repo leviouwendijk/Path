@@ -45,35 +45,10 @@ public struct PathSandbox: Sendable, Codable, Equatable, Hashable {
         rawPath: String,
         filetype: AnyFileType? = nil
     ) throws -> ScopedPath {
-        let parts = rawPath
-            .split(separator: "/", omittingEmptySubsequences: true)
-            .map(String.init)
-
-        var depth = 0
-
-        for part in parts {
-            switch part {
-            case "", ".":
-                continue
-
-            case "..":
-                guard depth > 0 else {
-                    throw PathSandboxError.pathEscapesSandbox(
-                        path: StandardPath(),
-                        root: root
-                    )
-                }
-
-                depth -= 1
-
-            default:
-                depth += 1
-            }
-        }
-
-        return try sandbox(
-            StandardPath(
+        try sandbox(
+            PathStrictRelativeNormalization.path(
                 rawPath: rawPath,
+                root: root,
                 filetype: filetype
             )
         )
