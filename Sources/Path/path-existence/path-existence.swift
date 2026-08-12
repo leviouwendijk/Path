@@ -1,18 +1,42 @@
 import Foundation
+import IO
 
 public struct PathExistence: Sendable {
     public static func check(
         url: URL
     ) -> (exists: Bool, type: PathSegmentType?) {
-        var isDirectory: ObjCBool = false
-        let exists = FileManager.default.fileExists(
-            atPath: url.standardizedFileURL.path,
-            isDirectory: &isDirectory
+        let fileSystem = FileSystem.default
+
+        guard fileSystem.exists(
+            url
+        ) else {
+            return (
+                exists: false,
+                type: nil
+            )
+        }
+
+        let resolvedURL = fileSystem.resolve(
+            url
         )
-        let type = exists ? PathSegmentType.from(isDirectory) : nil
+
+        let type: PathSegmentType?
+
+        if
+            let metadata = try? FileInspector(
+                resolvedURL
+            ).inspect(),
+            let kind = metadata.kind
+        {
+            type = PathSegmentType(
+                kind
+            )
+        } else {
+            type = nil
+        }
 
         return (
-            exists: exists,
+            exists: true,
             type: type
         )
     }

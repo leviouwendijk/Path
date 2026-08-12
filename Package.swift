@@ -5,6 +5,9 @@ import PackageDescription
 
 let package = Package(
     name: "Path",
+    platforms: [
+        .macOS(.v13),
+    ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
@@ -21,6 +24,7 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .leviouwendijk.IO,
         .leviouwendijk.FileTypes,
         .leviouwendijk.Methods,
         .leviouwendijk.ProtocolComponents,
@@ -31,6 +35,7 @@ let package = Package(
         .target(
             name: "Path",
             dependencies: [
+                .leviouwendijk.IO,
                 .leviouwendijk.Position,
                 .leviouwendijk.FileTypes,
             ]
@@ -235,6 +240,7 @@ enum Catalogs {
 }
 
 struct LeviOuwendijkCatalog {
+    let IO = DependencyCatalog.Ref("IO")
     let HTTP = DependencyCatalog.Ref("HTTP")
     let Server = DependencyCatalog.Ref("Server")
     let Milieu = DependencyCatalog.Ref("Milieu")

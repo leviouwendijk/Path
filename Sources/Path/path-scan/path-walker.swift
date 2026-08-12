@@ -1,32 +1,37 @@
 import Foundation
+import IO
 
 public struct PathWalker {
     public let root: URL
     public let configuration: PathWalkConfiguration
-    public let fileManager: FileManager
+    public let fileSystem: FileSystem
 
     public init(
         root: URL,
         configuration: PathWalkConfiguration = .init(),
-        fileManager: FileManager = .default
+        fileSystem: FileSystem = .default
     ) {
         self.root = root.standardizedFileURL
         self.configuration = configuration
-        self.fileManager = fileManager
+        self.fileSystem = fileSystem
     }
 
     public func walk() throws -> [PathWalkEntry] {
         var out: [PathWalkEntry] = []
 
-        var isDirectory: ObjCBool = false
-        guard fileManager.fileExists(
-            atPath: root.path,
-            isDirectory: &isDirectory
-        ) else {
+        let inspectedRoot = fileSystem.resolve(
+            root
+        )
+
+        let rootMetadata = try FileInspector(
+            inspectedRoot
+        ).inspect()
+
+        guard rootMetadata.existed else {
             return []
         }
 
-        if !isDirectory.boolValue {
+        if rootMetadata.kind != .directory {
             if configuration.emitFiles {
                 out.append(
                     makeEntry(
@@ -82,14 +87,8 @@ private extension PathWalker {
             return
         }
 
-        let children = try fileManager.contentsOfDirectory(
-            at: standardizedDirectory,
-            includingPropertiesForKeys: [
-                .isDirectoryKey,
-                .isSymbolicLinkKey,
-                .isHiddenKey
-            ],
-            options: []
+        let children = try fileSystem.directory.contents(
+            standardizedDirectory
         )
 
         for child in children.sorted(by: { $0.path < $1.path }) {
@@ -98,29 +97,40 @@ private extension PathWalker {
                 continue
             }
 
-            let values = try child.resourceValues(forKeys: [
-                .isDirectoryKey,
-                .isSymbolicLinkKey
-            ])
+            let childMetadata = try FileInspector(
+                child
+            ).inspect()
 
-            if values.isSymbolicLink == true,
-               !configuration.followSymlinks {
+            guard childMetadata.existed else {
                 continue
             }
 
-            let targetURL = configuration.followSymlinks
-                ? child.resolvingSymlinksInPath().standardizedFileURL
-                : child.standardizedFileURL
+            let targetURL: URL
+            let targetMetadata: FileMetadataSnapshot
 
-            var isDirectory: ObjCBool = false
-            guard fileManager.fileExists(
-                atPath: targetURL.path,
-                isDirectory: &isDirectory
-            ) else {
+            if childMetadata.kind == .symlink {
+                guard configuration.followSymlinks else {
+                    continue
+                }
+
+                targetURL = fileSystem.resolve(
+                    child
+                )
+
+                targetMetadata = try FileInspector(
+                    targetURL
+                ).inspect()
+            } else {
+                targetURL = child.standardizedFileURL
+                targetMetadata = childMetadata
+            }
+
+            guard targetMetadata.existed else {
                 continue
             }
 
-            if isDirectory.boolValue {
+            switch targetMetadata.kind {
+            case .directory:
                 try walkDirectory(
                     targetURL,
                     depth: depth + 1,
@@ -128,14 +138,20 @@ private extension PathWalker {
                     visited: &visited,
                     emitCurrentDirectory: configuration.emitDirectories
                 )
-            } else if configuration.emitFiles {
-                entries.append(
-                    makeEntry(
-                        url: targetURL,
-                        depth: depth + 1,
-                        type: .file
+
+            case .file:
+                if configuration.emitFiles {
+                    entries.append(
+                        makeEntry(
+                            url: targetURL,
+                            depth: depth + 1,
+                            type: .file
+                        )
                     )
-                )
+                }
+
+            case .symlink, .other, nil:
+                continue
             }
         }
     }
@@ -211,7 +227,9 @@ private extension PathWalker {
         for url: URL
     ) -> URL {
         configuration.followSymlinks
-            ? url.resolvingSymlinksInPath().standardizedFileURL
+            ? fileSystem.resolve(
+                url
+            )
             : url.standardizedFileURL
     }
 }

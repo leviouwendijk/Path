@@ -1,4 +1,5 @@
 import Foundation
+import IO
 
 public enum PathAncestorSearch {
     public static func ancestors(
@@ -92,7 +93,7 @@ public enum PathAncestorSearch {
         treatingStartAsDirectory: Bool = true,
         includingStart: Bool = true,
         maxDepth: Int? = nil,
-        fileManager: FileManager = .default
+        fileSystem: FileSystem = .default
     ) -> URL? {
         nearestAncestor(
             startingAt: start,
@@ -101,12 +102,12 @@ public enum PathAncestorSearch {
             maxDepth: maxDepth
         ) { candidate in
             for name in names {
-                var isDirectory: ObjCBool = false
-                let target = candidate.appendingPathComponent(name)
+                let target = candidate.appendingPathComponent(
+                    name
+                )
 
-                if fileManager.fileExists(
-                    atPath: target.path,
-                    isDirectory: &isDirectory
+                if fileSystem.exists(
+                    target
                 ) {
                     return true
                 }

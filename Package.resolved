@@ -1,5 +1,5 @@
 {
-  "originHash" : "3d6960de368b15ffbb3a33462979780f054a63a319976ed6022caa7a2be46b27",
+  "originHash" : "aa870c6b1c1ba11350cfe5fdc1e245103bd5790e4df47bf0ec322f3bf0827fcc",
   "pins" : [
     {
       "identity" : "filetypes",
@@ -8,6 +8,15 @@
       "state" : {
         "branch" : "master",
         "revision" : "77d9b8387e7df863e66dd4665a6f5181365ffe0d"
+      }
+    },
+    {
+      "identity" : "io",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/leviouwendijk/IO.git",
+      "state" : {
+        "branch" : "master",
+        "revision" : "4cd73c07e948b6520ba912b08eb5f132aaa81775"
       }
     },
     {

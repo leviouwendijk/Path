@@ -1,4 +1,5 @@
 import Foundation
+import IO
 
 public enum PathCreation {
     public static func directory(
@@ -18,9 +19,9 @@ public enum PathCreation {
         withIntermediateDirectories: Bool = true,
         attributes: [FileAttributeKey: Any]? = nil
     ) throws {
-        try FileManager.default.createDirectory(
-            at: url.standardizedFileURL,
-            withIntermediateDirectories: withIntermediateDirectories,
+        try FileSystem.default.directory.create(
+            url,
+            intermediates: withIntermediateDirectories,
             attributes: attributes
         )
     }
