@@ -24,6 +24,16 @@ public enum PathScan {
     }
 
     public static func scan(
+        _ plans: [CompiledPathScanPlan],
+        configuration: PathWalkConfiguration = .init()
+    ) throws -> PathScanBatchResult {
+        try PathScanner.scan(
+            plans,
+            configuration: configuration
+        )
+    }
+
+    public static func scan(
         _ plan: CompiledPathScanPlan,
         configuration: PathWalkConfiguration = .init()
     ) throws -> PathScanResult {

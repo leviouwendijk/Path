@@ -71,6 +71,27 @@ public struct PathScanResult: Sendable, Codable, Equatable {
     }
 }
 
+
+public struct PathScanBatchResult:
+    Sendable,
+    Codable,
+    Equatable
+{
+    public let results: [PathScanResult]
+    public let logicalTraversalCount: Int
+    public let physicalTraversalCount: Int
+
+    public init(
+        results: [PathScanResult],
+        logicalTraversalCount: Int,
+        physicalTraversalCount: Int
+    ) {
+        self.results = results
+        self.logicalTraversalCount = logicalTraversalCount
+        self.physicalTraversalCount = physicalTraversalCount
+    }
+}
+
 public enum PathScanCompiler {
     public static func compile(
         _ specification: PathScanSpecification,
@@ -157,6 +178,158 @@ public enum PathScanner {
             warnings: plan.warnings
         )
     }
+
+    public static func scan(
+        _ plans: [CompiledPathScanPlan],
+        configuration: PathWalkConfiguration = .init()
+    ) throws -> PathScanBatchResult {
+        guard !plans.isEmpty else {
+            return .init(
+                results: [],
+                logicalTraversalCount: 0,
+                physicalTraversalCount: 0
+            )
+        }
+
+        var collected = Array(
+            repeating: [URL: PathScanMatch](),
+            count: plans.count
+        )
+
+        var traversalsByRoot:
+            [
+                URL:
+                    [
+                        (
+                            planIndex: Int,
+                            traversal: PathTraversalPlan
+                        )
+                    ]
+            ] = [:]
+
+        var logicalTraversalCount = 0
+
+        for (
+            planIndex,
+            plan
+        ) in plans.enumerated() {
+            for traversal in plan.traversals {
+                logicalTraversalCount += 1
+
+                let root =
+                    traversal
+                    .root
+                    .standardizedFileURL
+
+                traversalsByRoot[
+                    root,
+                    default: []
+                ]
+                .append(
+                    (
+                        planIndex: planIndex,
+                        traversal: traversal
+                    )
+                )
+            }
+        }
+
+        let roots =
+            traversalsByRoot
+            .keys
+            .sorted {
+                $0.path < $1.path
+            }
+
+        for root in roots {
+            guard let work =
+                traversalsByRoot[root]
+            else {
+                continue
+            }
+
+            let entries = try PathWalker(
+                root: root,
+                configuration: configuration
+            )
+            .walk()
+
+            for entry in entries {
+                for item in work {
+                    let traversal =
+                        item.traversal
+
+                    if isExcluded(
+                        entry,
+                        excludes:
+                            traversal.excludes,
+                        anchorDirectory:
+                            traversal.anchorDirectory
+                    ) {
+                        continue
+                    }
+
+                    let matchedInclude =
+                        traversal
+                        .includes
+                        .contains {
+                            matches(
+                                entry: entry,
+                                expression: $0,
+                                root:
+                                    traversal.root,
+                                anchorDirectory:
+                                    traversal.anchorDirectory
+                            )
+                        }
+
+                    guard matchedInclude else {
+                        continue
+                    }
+
+                    collected[
+                        item.planIndex
+                    ][entry.url] =
+                        PathScanMatch(
+                            url: entry.url,
+                            path:
+                                entry.absolutePath,
+                            type:
+                                entry.type
+                        )
+                }
+            }
+        }
+
+        let results =
+            plans
+            .enumerated()
+            .map {
+                index,
+                plan in
+
+                PathScanResult(
+                    matches:
+                        collected[index]
+                        .values
+                        .sorted {
+                            $0.url.path
+                                < $1.url.path
+                        },
+                    warnings:
+                        plan.warnings
+                )
+            }
+
+        return .init(
+            results: results,
+            logicalTraversalCount:
+                logicalTraversalCount,
+            physicalTraversalCount:
+                roots.count
+        )
+    }
+
 }
 
 private extension PathScanCompiler {
