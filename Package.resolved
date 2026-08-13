@@ -1,5 +1,5 @@
 {
-  "originHash" : "aa870c6b1c1ba11350cfe5fdc1e245103bd5790e4df47bf0ec322f3bf0827fcc",
+  "originHash" : "d26d3a6d47f6e90043a9b9e22e3fa45bc9de2403ce84049d092b47b801fdbb36",
   "pins" : [
     {
       "identity" : "filetypes",
@@ -7,7 +7,7 @@
       "location" : "https://github.com/leviouwendijk/FileTypes.git",
       "state" : {
         "branch" : "master",
-        "revision" : "77d9b8387e7df863e66dd4665a6f5181365ffe0d"
+        "revision" : "f0c1d8bf5beda0de51c9e95b687fbdec9e4ce7b0"
       }
     },
     {
@@ -16,7 +16,7 @@
       "location" : "https://github.com/leviouwendijk/IO.git",
       "state" : {
         "branch" : "master",
-        "revision" : "4cd73c07e948b6520ba912b08eb5f132aaa81775"
+        "revision" : "b26bf1b07dc055aab8ce00c4cd299ec37f675ffb"
       }
     },
     {
@@ -25,7 +25,7 @@
       "location" : "https://github.com/leviouwendijk/Methods.git",
       "state" : {
         "branch" : "master",
-        "revision" : "47d7bf31c1e547238c1900fe4a1f6961b6cc19bb"
+        "revision" : "62656c2e32b7889df68415464b67b440f7e7e464"
       }
     },
     {
@@ -34,7 +34,7 @@
       "location" : "https://github.com/leviouwendijk/Parsing.git",
       "state" : {
         "branch" : "master",
-        "revision" : "38e346697615fbb32fdac86e6528c18104d89334"
+        "revision" : "8cd4b7bdc25d590d65b803a4f3e07e4fe3756664"
       }
     },
     {
@@ -43,7 +43,7 @@
       "location" : "https://github.com/leviouwendijk/Position.git",
       "state" : {
         "branch" : "master",
-        "revision" : "70fd78230c3452d9a4471222d64324a2c084351d"
+        "revision" : "c80214283130c1bd4fc1c54dd5f3c574e3e4986c"
       }
     },
     {

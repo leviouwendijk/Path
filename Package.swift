@@ -55,10 +55,6 @@ let package = Package(
                 .leviouwendijk.Parsing,
             ]
         ),
-        // .testTarget(
-        //     name: "PathTests",
-        //     dependencies: ["Path"]
-        // ),
     ]
 )
 
