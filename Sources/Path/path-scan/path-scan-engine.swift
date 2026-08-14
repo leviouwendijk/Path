@@ -477,19 +477,6 @@ public enum PathScanner {
                     == physicalRoot
             }
 
-            let logicalRootComponents =
-                Dictionary(
-                    uniqueKeysWithValues:
-                        logicalRoots.map {
-                            (
-                                $0,
-                                components(
-                                    of: $0
-                                )
-                            )
-                        }
-                )
-
             var walkConfiguration =
                 configuration
 
@@ -554,92 +541,197 @@ public enum PathScanner {
 
             let dispatchStartedAt = Date()
 
+            let physicalRootComponents =
+                components(
+                    of: physicalRoot
+                )
+
+            var routeChildren:
+                [[String: Int]] = [
+                    [:]
+                ]
+
+            var routeItems:
+                [
+                    [
+                        (
+                            planIndex: Int,
+                            traversal: PathTraversalPlan
+                        )
+                    ]
+                ] = [
+                    []
+                ]
+
+            for logicalRoot in logicalRoots {
+                guard let relativeRootComponents =
+                    relativeComponents(
+                        of: logicalRoot,
+                        under: physicalRoot
+                    ),
+                      let items =
+                        traversalsByRoot[
+                            logicalRoot
+                        ]
+                else {
+                    continue
+                }
+
+                var nodeIndex = 0
+
+                for component in relativeRootComponents {
+                    if let childIndex =
+                        routeChildren[
+                            nodeIndex
+                        ][component]
+                    {
+                        nodeIndex =
+                            childIndex
+
+                        continue
+                    }
+
+                    let childIndex =
+                        routeChildren.count
+
+                    routeChildren.append(
+                        [:]
+                    )
+
+                    routeItems.append(
+                        []
+                    )
+
+                    routeChildren[
+                        nodeIndex
+                    ][component] =
+                        childIndex
+
+                    nodeIndex =
+                        childIndex
+                }
+
+                routeItems[
+                    nodeIndex
+                ]
+                .append(
+                    contentsOf: items
+                )
+            }
+
+            let dispatchMaxDepth =
+                configuration
+                .maxDepth
+                .map {
+                    max(
+                        0,
+                        $0
+                    )
+                }
+
             for entry in entries {
                 let entryComponents =
                     components(
                         of: entry.url
                     )
 
-                for logicalRoot in logicalRoots {
-                    guard let rootComponents =
-                        logicalRootComponents[
-                            logicalRoot
-                        ],
-                          entryComponents.count
-                            >= rootComponents.count,
-                          entryComponents.starts(
-                            with: rootComponents
-                          )
-                    else {
-                        continue
-                    }
+                guard entryComponents.count
+                        >= physicalRootComponents.count,
+                      entryComponents.starts(
+                        with:
+                            physicalRootComponents
+                      )
+                else {
+                    continue
+                }
 
+                let entryRelativeDepth =
+                    entryComponents.count
+                    - physicalRootComponents.count
+
+                var nodeIndex = 0
+                var logicalRootDepth = 0
+
+                while true {
                     let logicalDepth =
-                        entryComponents.count
-                        - rootComponents.count
+                        entryRelativeDepth
+                        - logicalRootDepth
 
-                    if let maxDepth =
-                        configuration.maxDepth,
-                       logicalDepth
-                        > max(
-                            0,
-                            maxDepth
-                        )
+                    if dispatchMaxDepth == nil
+                        || logicalDepth
+                            <= dispatchMaxDepth!
                     {
-                        continue
-                    }
+                        for item in routeItems[
+                            nodeIndex
+                        ] {
+                            let traversal =
+                                item.traversal
 
-                    guard let items =
-                        traversalsByRoot[
-                            logicalRoot
-                        ]
-                    else {
-                        continue
-                    }
-
-                    for item in items {
-                        let traversal =
-                            item.traversal
-
-                        if isExcluded(
-                            entry,
-                            excludes:
-                                traversal.excludes,
-                            anchorDirectory:
-                                traversal.anchorDirectory
-                        ) {
-                            continue
-                        }
-
-                        let matchedInclude =
-                            traversal
-                            .includes
-                            .contains {
-                                matches(
-                                    entry: entry,
-                                    expression: $0,
-                                    root:
-                                        traversal.root,
-                                    anchorDirectory:
-                                        traversal.anchorDirectory
-                                )
+                            if isExcluded(
+                                entry,
+                                excludes:
+                                    traversal.excludes,
+                                anchorDirectory:
+                                    traversal.anchorDirectory
+                            ) {
+                                continue
                             }
 
-                        guard matchedInclude else {
-                            continue
-                        }
+                            let matchedInclude =
+                                traversal
+                                .includes
+                                .contains {
+                                    matches(
+                                        entry: entry,
+                                        expression: $0,
+                                        root:
+                                            traversal.root,
+                                        anchorDirectory:
+                                            traversal.anchorDirectory
+                                    )
+                                }
 
-                        collected[
-                            item.planIndex
-                        ][entry.url] =
-                            PathScanMatch(
-                                url: entry.url,
-                                path:
-                                    entry.absolutePath,
-                                type:
-                                    entry.type
-                            )
+                            guard matchedInclude else {
+                                continue
+                            }
+
+                            collected[
+                                item.planIndex
+                            ][entry.url] =
+                                PathScanMatch(
+                                    url: entry.url,
+                                    path:
+                                        entry.absolutePath,
+                                    type:
+                                        entry.type
+                                )
+                        }
                     }
+
+                    guard logicalRootDepth
+                            < entryRelativeDepth
+                    else {
+                        break
+                    }
+
+                    let component =
+                        entryComponents[
+                            physicalRootComponents.count
+                                + logicalRootDepth
+                        ]
+
+                    guard let childIndex =
+                        routeChildren[
+                            nodeIndex
+                        ][component]
+                    else {
+                        break
+                    }
+
+                    nodeIndex =
+                        childIndex
+
+                    logicalRootDepth += 1
                 }
             }
 
