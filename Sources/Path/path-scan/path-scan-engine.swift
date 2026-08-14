@@ -191,6 +191,113 @@ public enum PathScanner {
             )
         }
 
+        func components(
+            of url: URL
+        ) -> [String] {
+            url
+                .standardizedFileURL
+                .pathComponents
+        }
+
+        func relativeComponents(
+            of candidate: URL,
+            under root: URL
+        ) -> [String]? {
+            let rootComponents = components(
+                of: root
+            )
+
+            let candidateComponents = components(
+                of: candidate
+            )
+
+            guard candidateComponents.count
+                    >= rootComponents.count,
+                  Array(
+                    candidateComponents.prefix(
+                        rootComponents.count
+                    )
+                  ) == rootComponents
+            else {
+                return nil
+            }
+
+            return Array(
+                candidateComponents.dropFirst(
+                    rootComponents.count
+                )
+            )
+        }
+
+        func relativeDepth(
+            of candidate: URL,
+            under root: URL
+        ) -> Int? {
+            relativeComponents(
+                of: candidate,
+                under: root
+            )?
+            .count
+        }
+
+        func canCover(
+            _ candidate: URL,
+            from physicalRoot: URL
+        ) -> Bool {
+            guard let relativeComponents =
+                relativeComponents(
+                    of: candidate,
+                    under: physicalRoot
+                )
+            else {
+                return false
+            }
+
+            guard !relativeComponents.isEmpty else {
+                return true
+            }
+
+            if !configuration.includeHidden,
+               relativeComponents.contains(
+                    where: {
+                        $0.hasPrefix(
+                            "."
+                        )
+                    }
+               ) {
+                return false
+            }
+
+            var current =
+                physicalRoot
+                .standardizedFileURL
+
+            for component in relativeComponents {
+                current.appendPathComponent(
+                    component
+                )
+
+                guard let metadata =
+                    try? FileInspector(
+                        current
+                    )
+                    .inspect()
+                else {
+                    return false
+                }
+
+                guard metadata.existed else {
+                    break
+                }
+
+                if metadata.kind == .symlink {
+                    return false
+                }
+            }
+
+            return true
+        }
+
         var collected = Array(
             repeating: [URL: PathScanMatch](),
             count: plans.count
@@ -238,26 +345,161 @@ public enum PathScanner {
             traversalsByRoot
             .keys
             .sorted {
-                $0.path < $1.path
+                let lhsDepth =
+                    components(
+                        of: $0
+                    )
+                    .count
+
+                let rhsDepth =
+                    components(
+                        of: $1
+                    )
+                    .count
+
+                if lhsDepth != rhsDepth {
+                    return lhsDepth < rhsDepth
+                }
+
+                return $0.path < $1.path
             }
 
+        var physicalRoots: [URL] = []
+
+        var physicalRootByLogicalRoot:
+            [URL: URL] = [:]
+
         for root in roots {
-            guard let work =
-                traversalsByRoot[root]
-            else {
+            if let coveringRoot =
+                physicalRoots.first(
+                    where: {
+                        canCover(
+                            root,
+                            from: $0
+                        )
+                    }
+                ) {
+                physicalRootByLogicalRoot[
+                    root
+                ] = coveringRoot
+
                 continue
             }
 
+            physicalRoots.append(
+                root
+            )
+
+            physicalRootByLogicalRoot[
+                root
+            ] = root
+        }
+
+        for physicalRoot in physicalRoots {
+            let logicalRoots = roots.filter {
+                physicalRootByLogicalRoot[$0]
+                    == physicalRoot
+            }
+
+            var work:
+                [
+                    (
+                        logicalRoot: URL,
+                        planIndex: Int,
+                        traversal: PathTraversalPlan
+                    )
+                ] = []
+
+            for logicalRoot in logicalRoots {
+                guard let items =
+                    traversalsByRoot[
+                        logicalRoot
+                    ]
+                else {
+                    continue
+                }
+
+                for item in items {
+                    work.append(
+                        (
+                            logicalRoot:
+                                logicalRoot,
+                            planIndex:
+                                item.planIndex,
+                            traversal:
+                                item.traversal
+                        )
+                    )
+                }
+            }
+
+            var walkConfiguration =
+                configuration
+
+            if let maxDepth =
+                configuration.maxDepth
+            {
+                let logicalMaxDepth =
+                    max(
+                        0,
+                        maxDepth
+                    )
+
+                let maximumRootOffset =
+                    logicalRoots
+                    .compactMap {
+                        relativeDepth(
+                            of: $0,
+                            under: physicalRoot
+                        )
+                    }
+                    .max()
+                    ?? 0
+
+                if logicalMaxDepth
+                    > Int.max
+                        - maximumRootOffset
+                {
+                    walkConfiguration.maxDepth =
+                        Int.max
+                } else {
+                    walkConfiguration.maxDepth =
+                        logicalMaxDepth
+                        + maximumRootOffset
+                }
+            }
+
             let entries = try PathWalker(
-                root: root,
-                configuration: configuration
+                root: physicalRoot,
+                configuration: walkConfiguration
             )
             .walk()
 
-            for entry in entries {
-                for item in work {
-                    let traversal =
-                        item.traversal
+            for item in work {
+                let traversal =
+                    item.traversal
+
+                for entry in entries {
+                    guard let logicalDepth =
+                        relativeDepth(
+                            of: entry.url,
+                            under:
+                                item.logicalRoot
+                        )
+                    else {
+                        continue
+                    }
+
+                    if let maxDepth =
+                        configuration.maxDepth,
+                       logicalDepth
+                        > max(
+                            0,
+                            maxDepth
+                        )
+                    {
+                        continue
+                    }
 
                     if isExcluded(
                         entry,
@@ -326,7 +568,7 @@ public enum PathScanner {
             logicalTraversalCount:
                 logicalTraversalCount,
             physicalTraversalCount:
-                roots.count
+                physicalRoots.count
         )
     }
 
