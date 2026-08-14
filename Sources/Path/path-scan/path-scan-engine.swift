@@ -73,6 +73,29 @@ public struct PathScanResult: Sendable, Codable, Equatable {
 }
 
 
+public struct PathScanPhysicalTraversalStatistics:
+    Sendable,
+    Codable,
+    Equatable
+{
+    public let root: URL
+    public let duration: TimeInterval
+    public let entryCount: Int
+    public let logicalRootCount: Int
+
+    public init(
+        root: URL,
+        duration: TimeInterval,
+        entryCount: Int,
+        logicalRootCount: Int
+    ) {
+        self.root = root.standardizedFileURL
+        self.duration = duration
+        self.entryCount = entryCount
+        self.logicalRootCount = logicalRootCount
+    }
+}
+
 public struct PathScanBatchResult:
     Sendable,
     Codable,
@@ -81,15 +104,20 @@ public struct PathScanBatchResult:
     public let results: [PathScanResult]
     public let logicalTraversalCount: Int
     public let physicalTraversalCount: Int
+    public let physicalTraversals:
+        [PathScanPhysicalTraversalStatistics]
 
     public init(
         results: [PathScanResult],
         logicalTraversalCount: Int,
-        physicalTraversalCount: Int
+        physicalTraversalCount: Int,
+        physicalTraversals:
+            [PathScanPhysicalTraversalStatistics] = []
     ) {
         self.results = results
         self.logicalTraversalCount = logicalTraversalCount
         self.physicalTraversalCount = physicalTraversalCount
+        self.physicalTraversals = physicalTraversals
     }
 }
 
@@ -396,6 +424,13 @@ public enum PathScanner {
             ] = root
         }
 
+        var physicalTraversals:
+            [PathScanPhysicalTraversalStatistics] = []
+
+        physicalTraversals.reserveCapacity(
+            physicalRoots.count
+        )
+
         for physicalRoot in physicalRoots {
             let logicalRoots = roots.filter {
                 physicalRootByLogicalRoot[$0]
@@ -451,11 +486,28 @@ public enum PathScanner {
                 }
             }
 
+            let walkStartedAt = Date()
+
             let entries = try PathWalker(
                 root: physicalRoot,
                 configuration: walkConfiguration
             )
             .walk()
+
+            let walkDuration =
+                Date().timeIntervalSince(
+                    walkStartedAt
+                )
+
+            physicalTraversals.append(
+                .init(
+                    root: physicalRoot,
+                    duration: walkDuration,
+                    entryCount: entries.count,
+                    logicalRootCount:
+                        logicalRoots.count
+                )
+            )
 
             for entry in entries {
                 let entryComponents =
@@ -572,7 +624,9 @@ public enum PathScanner {
             logicalTraversalCount:
                 logicalTraversalCount,
             physicalTraversalCount:
-                physicalRoots.count
+                physicalRoots.count,
+            physicalTraversals:
+                physicalTraversals
         )
     }
 
