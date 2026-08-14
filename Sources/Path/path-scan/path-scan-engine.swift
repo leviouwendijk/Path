@@ -96,6 +96,33 @@ public struct PathScanPhysicalTraversalStatistics:
     }
 }
 
+public struct PathScanBatchStatistics:
+    Sendable,
+    Codable,
+    Equatable
+{
+    public let totalDuration: TimeInterval
+    public let planningDuration: TimeInterval
+    public let walkingDuration: TimeInterval
+    public let dispatchDuration: TimeInterval
+    public let resultConstructionDuration: TimeInterval
+
+    public init(
+        totalDuration: TimeInterval = 0,
+        planningDuration: TimeInterval = 0,
+        walkingDuration: TimeInterval = 0,
+        dispatchDuration: TimeInterval = 0,
+        resultConstructionDuration: TimeInterval = 0
+    ) {
+        self.totalDuration = totalDuration
+        self.planningDuration = planningDuration
+        self.walkingDuration = walkingDuration
+        self.dispatchDuration = dispatchDuration
+        self.resultConstructionDuration =
+            resultConstructionDuration
+    }
+}
+
 public struct PathScanBatchResult:
     Sendable,
     Codable,
@@ -106,18 +133,21 @@ public struct PathScanBatchResult:
     public let physicalTraversalCount: Int
     public let physicalTraversals:
         [PathScanPhysicalTraversalStatistics]
+    public let statistics: PathScanBatchStatistics
 
     public init(
         results: [PathScanResult],
         logicalTraversalCount: Int,
         physicalTraversalCount: Int,
         physicalTraversals:
-            [PathScanPhysicalTraversalStatistics] = []
+            [PathScanPhysicalTraversalStatistics] = [],
+        statistics: PathScanBatchStatistics = .init()
     ) {
         self.results = results
         self.logicalTraversalCount = logicalTraversalCount
         self.physicalTraversalCount = physicalTraversalCount
         self.physicalTraversals = physicalTraversals
+        self.statistics = statistics
     }
 }
 
@@ -219,6 +249,8 @@ public enum PathScanner {
                 physicalTraversalCount: 0
             )
         }
+
+        let startedAt = Date()
 
         func components(
             of url: URL
@@ -424,6 +456,14 @@ public enum PathScanner {
             ] = root
         }
 
+        let planningDuration =
+            Date().timeIntervalSince(
+                startedAt
+            )
+
+        var walkingDuration: TimeInterval = 0
+        var dispatchDuration: TimeInterval = 0
+
         var physicalTraversals:
             [PathScanPhysicalTraversalStatistics] = []
 
@@ -499,6 +539,9 @@ public enum PathScanner {
                     walkStartedAt
                 )
 
+            walkingDuration +=
+                walkDuration
+
             physicalTraversals.append(
                 .init(
                     root: physicalRoot,
@@ -508,6 +551,8 @@ public enum PathScanner {
                         logicalRoots.count
                 )
             )
+
+            let dispatchStartedAt = Date()
 
             for entry in entries {
                 let entryComponents =
@@ -597,7 +642,15 @@ public enum PathScanner {
                     }
                 }
             }
+
+            dispatchDuration +=
+                Date().timeIntervalSince(
+                    dispatchStartedAt
+                )
         }
+
+        let resultConstructionStartedAt =
+            Date()
 
         let results =
             plans
@@ -619,6 +672,16 @@ public enum PathScanner {
                 )
             }
 
+        let resultConstructionDuration =
+            Date().timeIntervalSince(
+                resultConstructionStartedAt
+            )
+
+        let totalDuration =
+            Date().timeIntervalSince(
+                startedAt
+            )
+
         return .init(
             results: results,
             logicalTraversalCount:
@@ -626,7 +689,19 @@ public enum PathScanner {
             physicalTraversalCount:
                 physicalRoots.count,
             physicalTraversals:
-                physicalTraversals
+                physicalTraversals,
+            statistics: .init(
+                totalDuration:
+                    totalDuration,
+                planningDuration:
+                    planningDuration,
+                walkingDuration:
+                    walkingDuration,
+                dispatchDuration:
+                    dispatchDuration,
+                resultConstructionDuration:
+                    resultConstructionDuration
+            )
         )
     }
 
