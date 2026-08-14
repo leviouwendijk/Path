@@ -255,12 +255,20 @@ public enum PathScanner {
             )
 
             for entry in try walker.walk() {
+                let entryComponents =
+                    entry
+                    .url
+                    .standardizedFileURL
+                    .pathComponents
+
                 let excluded =
                     prepared
                     .excludes
                     .contains {
                         matches(
                             entry: entry,
+                            components:
+                                entryComponents,
                             prepared: $0
                         )
                     }
@@ -275,6 +283,8 @@ public enum PathScanner {
                     .contains {
                         matches(
                             entry: entry,
+                            components:
+                                entryComponents,
                             prepared: $0
                         )
                     }
@@ -760,6 +770,8 @@ public enum PathScanner {
                                 .contains {
                                     matches(
                                         entry: entry,
+                                        components:
+                                            entryComponents,
                                         prepared: $0
                                     )
                                 }
@@ -774,6 +786,8 @@ public enum PathScanner {
                                 .contains {
                                     matches(
                                         entry: entry,
+                                        components:
+                                            entryComponents,
                                         prepared: $0
                                     )
                                 }
@@ -960,7 +974,7 @@ private struct PreparedPathScanExpression {
     let terminalHint: PathTerminalHint
     let concreteURL: URL?
     let pattern: PathPattern?
-    let patternRoot: StandardPath?
+    let patternRootComponents: [String]?
 }
 
 private struct PreparedPathTraversal {
@@ -1037,7 +1051,7 @@ private extension PathScanner {
                             anchorDirectory
                     ),
                 pattern: nil,
-                patternRoot: nil
+                patternRootComponents: nil
             )
         }
 
@@ -1047,20 +1061,16 @@ private extension PathScanner {
             concreteURL: nil,
             pattern:
                 expression.scanPattern,
-            patternRoot:
-                StandardPath(
-                    fileURL:
-                        patternRoot,
-                    terminalHint:
-                        .directory,
-                    inferFileType:
-                        false
-                )
+            patternRootComponents:
+                patternRoot
+                .standardizedFileURL
+                .pathComponents
         )
     }
 
     static func matches(
         entry: PathWalkEntry,
+        components entryComponents: [String],
         prepared: PreparedPathScanExpression
     ) -> Bool {
         guard terminalHintMatches(
@@ -1080,20 +1090,28 @@ private extension PathScanner {
         guard
             let pattern =
                 prepared.pattern,
-            let patternRoot =
-                prepared.patternRoot,
-            let relativePath =
-                entry
-                .absolutePath
-                .relative(
-                    to: patternRoot
-                )
+            let patternRootComponents =
+                prepared
+                .patternRootComponents,
+            entryComponents.count
+                >= patternRootComponents.count,
+            entryComponents.starts(
+                with:
+                    patternRootComponents
+            )
         else {
             return false
         }
 
+        let relativeComponents =
+            Array(
+                entryComponents.dropFirst(
+                    patternRootComponents.count
+                )
+            )
+
         return pattern.matches(
-            relativePath
+            relativeComponents
         )
     }
 
