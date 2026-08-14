@@ -1,5 +1,6 @@
 import Foundation
 import FileTypes
+import IO
 
 public enum PathScanWarning: Sendable, Codable, Equatable {
     case duplicateInclude(PathExpression)
