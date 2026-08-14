@@ -211,7 +211,7 @@ private extension PathWalker {
         let children =
             try fileSystem
             .directory
-            .contents(
+            .entries(
                 standardizedDirectory
             )
 
@@ -225,7 +225,8 @@ private extension PathWalker {
 
         let sortedChildren =
             children.sorted {
-                $0.path < $1.path
+                $0.url.path
+                    < $1.url.path
             }
 
         timings.childSortingDuration +=
@@ -233,7 +234,10 @@ private extension PathWalker {
                 childSortingStartedAt
             )
 
-        for child in sortedChildren {
+        for childEntry in sortedChildren {
+            let child =
+                childEntry.url
+
             if !configuration.includeHidden,
                child.lastPathComponent.hasPrefix(
                     "."
@@ -241,28 +245,10 @@ private extension PathWalker {
                 continue
             }
 
-            let childInspectionStartedAt =
-                Date()
-
-            let childMetadata =
-                try FileInspector(
-                    child
-                )
-                .inspect()
-
-            timings.metadataInspectionDuration +=
-                Date().timeIntervalSince(
-                    childInspectionStartedAt
-                )
-
-            guard childMetadata.existed else {
-                continue
-            }
-
             let targetURL: URL
-            let targetMetadata: FileMetadataSnapshot
+            let targetKind: FileKind
 
-            if childMetadata.kind == .symlink {
+            if childEntry.kind == .symlink {
                 guard configuration.followSymlinks else {
                     continue
                 }
@@ -275,7 +261,7 @@ private extension PathWalker {
                 let targetInspectionStartedAt =
                     Date()
 
-                targetMetadata =
+                let targetMetadata =
                     try FileInspector(
                         targetURL
                     )
@@ -285,19 +271,26 @@ private extension PathWalker {
                     Date().timeIntervalSince(
                         targetInspectionStartedAt
                     )
+
+                guard
+                    targetMetadata.existed,
+                    let kind =
+                        targetMetadata.kind
+                else {
+                    continue
+                }
+
+                targetKind =
+                    kind
             } else {
                 targetURL =
-                    child.standardizedFileURL
+                    child
 
-                targetMetadata =
-                    childMetadata
+                targetKind =
+                    childEntry.kind
             }
 
-            guard targetMetadata.existed else {
-                continue
-            }
-
-            switch targetMetadata.kind {
+            switch targetKind {
             case .directory:
                 try walkDirectory(
                     targetURL,
@@ -320,7 +313,7 @@ private extension PathWalker {
                     )
                 }
 
-            case .symlink, .other, nil:
+            case .symlink, .other:
                 continue
             }
         }
