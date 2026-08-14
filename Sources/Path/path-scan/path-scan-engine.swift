@@ -402,37 +402,18 @@ public enum PathScanner {
                     == physicalRoot
             }
 
-            var work:
-                [
-                    (
-                        logicalRoot: URL,
-                        planIndex: Int,
-                        traversal: PathTraversalPlan
-                    )
-                ] = []
-
-            for logicalRoot in logicalRoots {
-                guard let items =
-                    traversalsByRoot[
-                        logicalRoot
-                    ]
-                else {
-                    continue
-                }
-
-                for item in items {
-                    work.append(
-                        (
-                            logicalRoot:
-                                logicalRoot,
-                            planIndex:
-                                item.planIndex,
-                            traversal:
-                                item.traversal
-                        )
-                    )
-                }
-            }
+            let logicalRootComponents =
+                Dictionary(
+                    uniqueKeysWithValues:
+                        logicalRoots.map {
+                            (
+                                $0,
+                                components(
+                                    of: $0
+                                )
+                            )
+                        }
+                )
 
             var walkConfiguration =
                 configuration
@@ -476,20 +457,29 @@ public enum PathScanner {
             )
             .walk()
 
-            for item in work {
-                let traversal =
-                    item.traversal
+            for entry in entries {
+                let entryComponents =
+                    components(
+                        of: entry.url
+                    )
 
-                for entry in entries {
-                    guard let logicalDepth =
-                        relativeDepth(
-                            of: entry.url,
-                            under:
-                                item.logicalRoot
-                        )
+                for logicalRoot in logicalRoots {
+                    guard let rootComponents =
+                        logicalRootComponents[
+                            logicalRoot
+                        ],
+                          entryComponents.count
+                            >= rootComponents.count,
+                          entryComponents.starts(
+                            with: rootComponents
+                          )
                     else {
                         continue
                     }
+
+                    let logicalDepth =
+                        entryComponents.count
+                        - rootComponents.count
 
                     if let maxDepth =
                         configuration.maxDepth,
@@ -502,44 +492,57 @@ public enum PathScanner {
                         continue
                     }
 
-                    if isExcluded(
-                        entry,
-                        excludes:
-                            traversal.excludes,
-                        anchorDirectory:
-                            traversal.anchorDirectory
-                    ) {
+                    guard let items =
+                        traversalsByRoot[
+                            logicalRoot
+                        ]
+                    else {
                         continue
                     }
 
-                    let matchedInclude =
-                        traversal
-                        .includes
-                        .contains {
-                            matches(
-                                entry: entry,
-                                expression: $0,
-                                root:
-                                    traversal.root,
-                                anchorDirectory:
-                                    traversal.anchorDirectory
-                            )
+                    for item in items {
+                        let traversal =
+                            item.traversal
+
+                        if isExcluded(
+                            entry,
+                            excludes:
+                                traversal.excludes,
+                            anchorDirectory:
+                                traversal.anchorDirectory
+                        ) {
+                            continue
                         }
 
-                    guard matchedInclude else {
-                        continue
-                    }
+                        let matchedInclude =
+                            traversal
+                            .includes
+                            .contains {
+                                matches(
+                                    entry: entry,
+                                    expression: $0,
+                                    root:
+                                        traversal.root,
+                                    anchorDirectory:
+                                        traversal.anchorDirectory
+                                )
+                            }
 
-                    collected[
-                        item.planIndex
-                    ][entry.url] =
-                        PathScanMatch(
-                            url: entry.url,
-                            path:
-                                entry.absolutePath,
-                            type:
-                                entry.type
-                        )
+                        guard matchedInclude else {
+                            continue
+                        }
+
+                        collected[
+                            item.planIndex
+                        ][entry.url] =
+                            PathScanMatch(
+                                url: entry.url,
+                                path:
+                                    entry.absolutePath,
+                                type:
+                                    entry.type
+                            )
+                    }
                 }
             }
         }
