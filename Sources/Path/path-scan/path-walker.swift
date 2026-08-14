@@ -36,14 +36,31 @@ public struct PathWalker {
     public let configuration: PathWalkConfiguration
     public let fileSystem: FileSystem
 
+    private let rootPath: StandardPath
+
     public init(
         root: URL,
         configuration: PathWalkConfiguration = .init(),
         fileSystem: FileSystem = .default
     ) {
-        self.root = root.standardizedFileURL
-        self.configuration = configuration
-        self.fileSystem = fileSystem
+        let standardizedRoot =
+            root.standardizedFileURL
+
+        self.root =
+            standardizedRoot
+
+        self.configuration =
+            configuration
+
+        self.fileSystem =
+            fileSystem
+
+        self.rootPath =
+            StandardPath(
+                fileURL: standardizedRoot,
+                terminalHint: .directory,
+                inferFileType: false
+            )
     }
 
     public func walk() throws -> [PathWalkEntry] {
@@ -176,7 +193,7 @@ private extension PathWalker {
         timings: inout PathWalkTimingAccumulator
     ) throws {
         let standardizedDirectory =
-            directory.standardizedFileURL
+            directory
 
         let visitKey =
             resolvedVisitKey(
@@ -337,17 +354,13 @@ private extension PathWalker {
             inferFileType: type == .file
         )
 
-        let relativePath = relativePath(
-            from: absolutePath,
-            under: StandardPath(
-                fileURL: root,
-                terminalHint: .directory,
-                inferFileType: false
+        let relativePath =
+            relativePath(
+                from: absolutePath
             )
-        )
 
         return PathWalkEntry(
-            url: url,
+            standardizedURL: url,
             absolutePath: absolutePath,
             relativePath: relativePath,
             depth: depth,
@@ -356,10 +369,38 @@ private extension PathWalker {
     }
 
     func relativePath(
-        from candidate: StandardPath,
-        under rootPath: StandardPath
+        from candidate: StandardPath
     ) -> StandardPath {
-        candidate.relative(to: rootPath) ?? candidate
+        let rootSegments =
+            rootPath.segments
+
+        guard candidate.segments.count
+                >= rootSegments.count
+        else {
+            return candidate
+        }
+
+        for index in rootSegments.indices {
+            guard candidate
+                    .segments[index]
+                    .value
+                    == rootSegments[index].value
+            else {
+                return candidate
+            }
+        }
+
+        return StandardPath(
+            Array(
+                candidate
+                    .segments
+                    .dropFirst(
+                        rootSegments.count
+                    )
+            ),
+            filetype:
+                candidate.filetype
+        )
     }
 
     // func relativePath(
@@ -393,6 +434,6 @@ private extension PathWalker {
             ? fileSystem.resolve(
                 url
             )
-            : url.standardizedFileURL
+            : url
     }
 }

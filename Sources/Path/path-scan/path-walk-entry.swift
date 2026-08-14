@@ -14,7 +14,24 @@ public struct PathWalkEntry: Sendable, Codable, Equatable {
         depth: Int,
         type: PathSegmentType
     ) {
-        self.url = url.standardizedFileURL
+        self.init(
+            standardizedURL:
+                url.standardizedFileURL,
+            absolutePath: absolutePath,
+            relativePath: relativePath,
+            depth: depth,
+            type: type
+        )
+    }
+
+    init(
+        standardizedURL url: URL,
+        absolutePath: StandardPath,
+        relativePath: StandardPath,
+        depth: Int,
+        type: PathSegmentType
+    ) {
+        self.url = url
         self.absolutePath = absolutePath
         self.relativePath = relativePath
         self.depth = depth
