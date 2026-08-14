@@ -197,28 +197,40 @@ public enum PathScanner {
         var collected: [URL: PathScanMatch] = [:]
 
         for traversal in plan.traversals {
+            let prepared = prepare(
+                planIndex: 0,
+                traversal: traversal
+            )
+
             let walker = PathWalker(
                 root: traversal.root,
                 configuration: configuration
             )
 
             for entry in try walker.walk() {
-                if isExcluded(
-                    entry,
-                    excludes: traversal.excludes,
-                    anchorDirectory: traversal.anchorDirectory
-                ) {
+                let excluded =
+                    prepared
+                    .excludes
+                    .contains {
+                        matches(
+                            entry: entry,
+                            prepared: $0
+                        )
+                    }
+
+                if excluded {
                     continue
                 }
 
-                let matchedInclude = traversal.includes.contains {
-                    matches(
-                        entry: entry,
-                        expression: $0,
-                        root: traversal.root,
-                        anchorDirectory: traversal.anchorDirectory
-                    )
-                }
+                let matchedInclude =
+                    prepared
+                    .includes
+                    .contains {
+                        matches(
+                            entry: entry,
+                            prepared: $0
+                        )
+                    }
 
                 guard matchedInclude else {
                     continue
@@ -456,6 +468,26 @@ public enum PathScanner {
             ] = root
         }
 
+        var preparedTraversalsByRoot:
+            [URL: [PreparedPathTraversal]] = [:]
+
+        preparedTraversalsByRoot.reserveCapacity(
+            traversalsByRoot.count
+        )
+
+        for (
+            root,
+            items
+        ) in traversalsByRoot {
+            preparedTraversalsByRoot[root] =
+                items.map {
+                    prepare(
+                        planIndex: $0.planIndex,
+                        traversal: $0.traversal
+                    )
+                }
+        }
+
         let planningDuration =
             Date().timeIntervalSince(
                 startedAt
@@ -552,14 +584,7 @@ public enum PathScanner {
                 ]
 
             var routeItems:
-                [
-                    [
-                        (
-                            planIndex: Int,
-                            traversal: PathTraversalPlan
-                        )
-                    ]
-                ] = [
+                [[PreparedPathTraversal]] = [
                     []
                 ]
 
@@ -570,7 +595,7 @@ public enum PathScanner {
                         under: physicalRoot
                     ),
                       let items =
-                        traversalsByRoot[
+                        preparedTraversalsByRoot[
                             logicalRoot
                         ]
                 else {
@@ -664,30 +689,27 @@ public enum PathScanner {
                         for item in routeItems[
                             nodeIndex
                         ] {
-                            let traversal =
-                                item.traversal
+                            let isExcluded =
+                                item
+                                .excludes
+                                .contains {
+                                    matches(
+                                        entry: entry,
+                                        prepared: $0
+                                    )
+                                }
 
-                            if isExcluded(
-                                entry,
-                                excludes:
-                                    traversal.excludes,
-                                anchorDirectory:
-                                    traversal.anchorDirectory
-                            ) {
+                            if isExcluded {
                                 continue
                             }
 
                             let matchedInclude =
-                                traversal
+                                item
                                 .includes
                                 .contains {
                                     matches(
                                         entry: entry,
-                                        expression: $0,
-                                        root:
-                                            traversal.root,
-                                        anchorDirectory:
-                                            traversal.anchorDirectory
+                                        prepared: $0
                                     )
                                 }
 
@@ -869,90 +891,145 @@ private extension PathScanCompiler {
     }
 }
 
+private struct PreparedPathScanExpression {
+    let terminalHint: PathTerminalHint
+    let concreteURL: URL?
+    let pattern: PathPattern?
+    let patternRoot: StandardPath?
+}
+
+private struct PreparedPathTraversal {
+    let planIndex: Int
+    let includes: [PreparedPathScanExpression]
+    let excludes: [PreparedPathScanExpression]
+}
+
 private extension PathScanner {
-    static func isExcluded(
-        _ entry: PathWalkEntry,
-        excludes: [PathExpression],
-        anchorDirectory: URL
-    ) -> Bool {
-        excludes.contains { exclude in
-            matchesConcrete(
-                entry: entry,
-                expression: exclude,
-                anchorDirectory: anchorDirectory
-            ) || matchesPattern(
-                entry: entry,
-                expression: exclude,
-                root: exclude.scanRoot(
-                    relativeTo: .directoryURL(anchorDirectory)
+    static func prepare(
+        planIndex: Int,
+        traversal: PathTraversalPlan
+    ) -> PreparedPathTraversal {
+        let includes =
+            traversal
+            .includes
+            .map {
+                prepare(
+                    expression: $0,
+                    patternRoot:
+                        traversal.root,
+                    anchorDirectory:
+                        traversal.anchorDirectory
                 )
+            }
+
+        let excludes =
+            traversal
+            .excludes
+            .map {
+                expression in
+
+                let patternRoot =
+                    expression
+                    .pattern
+                    .isConcrete
+                    ? traversal.root
+                    : expression.scanRoot(
+                        relativeTo:
+                            .directoryURL(
+                                traversal.anchorDirectory
+                            )
+                    )
+
+                return prepare(
+                    expression: expression,
+                    patternRoot:
+                        patternRoot,
+                    anchorDirectory:
+                        traversal.anchorDirectory
+                )
+            }
+
+        return .init(
+            planIndex: planIndex,
+            includes: includes,
+            excludes: excludes
+        )
+    }
+
+    static func prepare(
+        expression: PathExpression,
+        patternRoot: URL,
+        anchorDirectory: URL
+    ) -> PreparedPathScanExpression {
+        if expression.pattern.isConcrete {
+            return .init(
+                terminalHint:
+                    expression.terminalHint,
+                concreteURL:
+                    concreteURL(
+                        for: expression,
+                        relativeTo:
+                            anchorDirectory
+                    ),
+                pattern: nil,
+                patternRoot: nil
             )
         }
+
+        return .init(
+            terminalHint:
+                expression.terminalHint,
+            concreteURL: nil,
+            pattern:
+                expression.scanPattern,
+            patternRoot:
+                StandardPath(
+                    fileURL:
+                        patternRoot,
+                    terminalHint:
+                        .directory,
+                    inferFileType:
+                        false
+                )
+        )
     }
 
     static func matches(
         entry: PathWalkEntry,
-        expression: PathExpression,
-        root: URL,
-        anchorDirectory: URL
+        prepared: PreparedPathScanExpression
     ) -> Bool {
-        matchesConcrete(
-            entry: entry,
-            expression: expression,
-            anchorDirectory: anchorDirectory
-        ) || matchesPattern(
-            entry: entry,
-            expression: expression,
-            root: root
+        guard terminalHintMatches(
+            prepared.terminalHint,
+            type: entry.type
+        ) else {
+            return false
+        }
+
+        if let concreteURL =
+            prepared.concreteURL
+        {
+            return concreteURL
+                == entry.url
+        }
+
+        guard
+            let pattern =
+                prepared.pattern,
+            let patternRoot =
+                prepared.patternRoot,
+            let relativePath =
+                entry
+                .absolutePath
+                .relative(
+                    to: patternRoot
+                )
+        else {
+            return false
+        }
+
+        return pattern.matches(
+            relativePath
         )
-    }
-
-    static func matchesConcrete(
-        entry: PathWalkEntry,
-        expression: PathExpression,
-        anchorDirectory: URL
-    ) -> Bool {
-        guard let concreteURL = concreteURL(
-            for: expression,
-            relativeTo: anchorDirectory
-        ) else {
-            return false
-        }
-
-        guard terminalHintMatches(
-            expression.terminalHint,
-            type: entry.type
-        ) else {
-            return false
-        }
-
-        return concreteURL == entry.url
-    }
-
-    static func matchesPattern(
-        entry: PathWalkEntry,
-        expression: PathExpression,
-        root: URL
-    ) -> Bool {
-        guard !expression.pattern.isConcrete else {
-            return false
-        }
-
-        guard terminalHintMatches(
-            expression.terminalHint,
-            type: entry.type
-        ) else {
-            return false
-        }
-
-        guard let relativePath = relativePathIfDescendant(
-            entry,
-            under: root
-        ) else {
-            return false
-        }
-
-        return expression.scanPattern.matches(relativePath)
     }
 
     static func concreteURL(
@@ -1014,18 +1091,6 @@ private extension PathScanner {
         }
     }
 
-    static func relativePathIfDescendant(
-        _ entry: PathWalkEntry,
-        under root: URL
-    ) -> StandardPath? {
-        let rootPath = StandardPath(
-            fileURL: root,
-            terminalHint: .directory,
-            inferFileType: false
-        )
-
-        return entry.absolutePath.relative(to: rootPath)
-    }
 }
 
 // import Foundation
