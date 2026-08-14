@@ -83,16 +83,63 @@ public struct PathScanPhysicalTraversalStatistics:
     public let entryCount: Int
     public let logicalRootCount: Int
 
+    public let directoryEnumerationDuration:
+        TimeInterval
+
+    public let childSortingDuration:
+        TimeInterval
+
+    public let metadataInspectionDuration:
+        TimeInterval
+
+    public let bookkeepingDuration:
+        TimeInterval
+
+    public let resultSortingDuration:
+        TimeInterval
+
     public init(
         root: URL,
         duration: TimeInterval,
         entryCount: Int,
-        logicalRootCount: Int
+        logicalRootCount: Int,
+        directoryEnumerationDuration:
+            TimeInterval = 0,
+        childSortingDuration:
+            TimeInterval = 0,
+        metadataInspectionDuration:
+            TimeInterval = 0,
+        bookkeepingDuration:
+            TimeInterval = 0,
+        resultSortingDuration:
+            TimeInterval = 0
     ) {
-        self.root = root.standardizedFileURL
-        self.duration = duration
-        self.entryCount = entryCount
-        self.logicalRootCount = logicalRootCount
+        self.root =
+            root.standardizedFileURL
+
+        self.duration =
+            duration
+
+        self.entryCount =
+            entryCount
+
+        self.logicalRootCount =
+            logicalRootCount
+
+        self.directoryEnumerationDuration =
+            directoryEnumerationDuration
+
+        self.childSortingDuration =
+            childSortingDuration
+
+        self.metadataInspectionDuration =
+            metadataInspectionDuration
+
+        self.bookkeepingDuration =
+            bookkeepingDuration
+
+        self.resultSortingDuration =
+            resultSortingDuration
     }
 }
 
@@ -545,29 +592,47 @@ public enum PathScanner {
                 }
             }
 
-            let walkStartedAt = Date()
-
-            let entries = try PathWalker(
-                root: physicalRoot,
-                configuration: walkConfiguration
-            )
-            .walk()
-
-            let walkDuration =
-                Date().timeIntervalSince(
-                    walkStartedAt
+            let walkResult =
+                try PathWalker(
+                    root: physicalRoot,
+                    configuration:
+                        walkConfiguration
                 )
+                .measuredWalk()
+
+            let entries =
+                walkResult.entries
+
+            let walkStatistics =
+                walkResult.statistics
 
             walkingDuration +=
-                walkDuration
+                walkStatistics.totalDuration
 
             physicalTraversals.append(
                 .init(
                     root: physicalRoot,
-                    duration: walkDuration,
-                    entryCount: entries.count,
+                    duration:
+                        walkStatistics.totalDuration,
+                    entryCount:
+                        entries.count,
                     logicalRootCount:
-                        logicalRoots.count
+                        logicalRoots.count,
+                    directoryEnumerationDuration:
+                        walkStatistics
+                        .directoryEnumerationDuration,
+                    childSortingDuration:
+                        walkStatistics
+                        .childSortingDuration,
+                    metadataInspectionDuration:
+                        walkStatistics
+                        .metadataInspectionDuration,
+                    bookkeepingDuration:
+                        walkStatistics
+                        .bookkeepingDuration,
+                    resultSortingDuration:
+                        walkStatistics
+                        .resultSortingDuration
                 )
             )
 

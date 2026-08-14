@@ -1,6 +1,36 @@
 import Foundation
 import IO
 
+struct PathWalkStatistics {
+    let totalDuration: TimeInterval
+    let directoryEnumerationDuration: TimeInterval
+    let childSortingDuration: TimeInterval
+    let metadataInspectionDuration: TimeInterval
+    let resultSortingDuration: TimeInterval
+
+    var bookkeepingDuration: TimeInterval {
+        max(
+            0,
+            totalDuration
+                - directoryEnumerationDuration
+                - childSortingDuration
+                - metadataInspectionDuration
+                - resultSortingDuration
+        )
+    }
+}
+
+struct PathWalkMeasuredResult {
+    let entries: [PathWalkEntry]
+    let statistics: PathWalkStatistics
+}
+
+private struct PathWalkTimingAccumulator {
+    var directoryEnumerationDuration: TimeInterval = 0
+    var childSortingDuration: TimeInterval = 0
+    var metadataInspectionDuration: TimeInterval = 0
+}
+
 public struct PathWalker {
     public let root: URL
     public let configuration: PathWalkConfiguration
@@ -17,18 +47,50 @@ public struct PathWalker {
     }
 
     public func walk() throws -> [PathWalkEntry] {
+        try measuredWalk().entries
+    }
+
+    func measuredWalk() throws -> PathWalkMeasuredResult {
+        let startedAt = Date()
+
+        var timings =
+            PathWalkTimingAccumulator()
+
         var out: [PathWalkEntry] = []
 
         let inspectedRoot = fileSystem.resolve(
             root
         )
 
+        let rootInspectionStartedAt =
+            Date()
+
         let rootMetadata = try FileInspector(
             inspectedRoot
         ).inspect()
 
+        timings.metadataInspectionDuration +=
+            Date().timeIntervalSince(
+                rootInspectionStartedAt
+            )
+
         guard rootMetadata.existed else {
-            return []
+            return .init(
+                entries: [],
+                statistics: .init(
+                    totalDuration:
+                        Date().timeIntervalSince(
+                            startedAt
+                        ),
+                    directoryEnumerationDuration:
+                        timings.directoryEnumerationDuration,
+                    childSortingDuration:
+                        timings.childSortingDuration,
+                    metadataInspectionDuration:
+                        timings.metadataInspectionDuration,
+                    resultSortingDuration: 0
+                )
+            )
         }
 
         if rootMetadata.kind != .directory {
@@ -42,19 +104,65 @@ public struct PathWalker {
                 )
             }
 
-            return out
+            return .init(
+                entries: out,
+                statistics: .init(
+                    totalDuration:
+                        Date().timeIntervalSince(
+                            startedAt
+                        ),
+                    directoryEnumerationDuration:
+                        timings.directoryEnumerationDuration,
+                    childSortingDuration:
+                        timings.childSortingDuration,
+                    metadataInspectionDuration:
+                        timings.metadataInspectionDuration,
+                    resultSortingDuration: 0
+                )
+            )
         }
 
         var visited: Set<URL> = []
+
         try walkDirectory(
             root,
             depth: 0,
             entries: &out,
             visited: &visited,
-            emitCurrentDirectory: configuration.emitDirectories
+            emitCurrentDirectory:
+                configuration.emitDirectories,
+            timings: &timings
         )
 
-        return out.sorted { $0.url.path < $1.url.path }
+        let resultSortingStartedAt =
+            Date()
+
+        let sorted = out.sorted {
+            $0.url.path < $1.url.path
+        }
+
+        let resultSortingDuration =
+            Date().timeIntervalSince(
+                resultSortingStartedAt
+            )
+
+        return .init(
+            entries: sorted,
+            statistics: .init(
+                totalDuration:
+                    Date().timeIntervalSince(
+                        startedAt
+                    ),
+                directoryEnumerationDuration:
+                    timings.directoryEnumerationDuration,
+                childSortingDuration:
+                    timings.childSortingDuration,
+                metadataInspectionDuration:
+                    timings.metadataInspectionDuration,
+                resultSortingDuration:
+                    resultSortingDuration
+            )
+        )
     }
 }
 
@@ -64,12 +172,20 @@ private extension PathWalker {
         depth: Int,
         entries: inout [PathWalkEntry],
         visited: inout Set<URL>,
-        emitCurrentDirectory: Bool
+        emitCurrentDirectory: Bool,
+        timings: inout PathWalkTimingAccumulator
     ) throws {
-        let standardizedDirectory = directory.standardizedFileURL
-        let visitKey = resolvedVisitKey(for: standardizedDirectory)
+        let standardizedDirectory =
+            directory.standardizedFileURL
 
-        guard visited.insert(visitKey).inserted else {
+        let visitKey =
+            resolvedVisitKey(
+                for: standardizedDirectory
+            )
+
+        guard visited.insert(
+            visitKey
+        ).inserted else {
             return
         }
 
@@ -83,23 +199,61 @@ private extension PathWalker {
             )
         }
 
-        if let maxDepth = configuration.maxDepth, depth >= maxDepth {
+        if let maxDepth =
+            configuration.maxDepth,
+           depth >= maxDepth {
             return
         }
 
-        let children = try fileSystem.directory.contents(
-            standardizedDirectory
-        )
+        let enumerationStartedAt =
+            Date()
 
-        for child in children.sorted(by: { $0.path < $1.path }) {
+        let children =
+            try fileSystem
+            .directory
+            .contents(
+                standardizedDirectory
+            )
+
+        timings.directoryEnumerationDuration +=
+            Date().timeIntervalSince(
+                enumerationStartedAt
+            )
+
+        let childSortingStartedAt =
+            Date()
+
+        let sortedChildren =
+            children.sorted {
+                $0.path < $1.path
+            }
+
+        timings.childSortingDuration +=
+            Date().timeIntervalSince(
+                childSortingStartedAt
+            )
+
+        for child in sortedChildren {
             if !configuration.includeHidden,
-               child.lastPathComponent.hasPrefix(".") {
+               child.lastPathComponent.hasPrefix(
+                    "."
+               ) {
                 continue
             }
 
-            let childMetadata = try FileInspector(
-                child
-            ).inspect()
+            let childInspectionStartedAt =
+                Date()
+
+            let childMetadata =
+                try FileInspector(
+                    child
+                )
+                .inspect()
+
+            timings.metadataInspectionDuration +=
+                Date().timeIntervalSince(
+                    childInspectionStartedAt
+                )
 
             guard childMetadata.existed else {
                 continue
@@ -113,16 +267,30 @@ private extension PathWalker {
                     continue
                 }
 
-                targetURL = fileSystem.resolve(
-                    child
-                )
+                targetURL =
+                    fileSystem.resolve(
+                        child
+                    )
 
-                targetMetadata = try FileInspector(
-                    targetURL
-                ).inspect()
+                let targetInspectionStartedAt =
+                    Date()
+
+                targetMetadata =
+                    try FileInspector(
+                        targetURL
+                    )
+                    .inspect()
+
+                timings.metadataInspectionDuration +=
+                    Date().timeIntervalSince(
+                        targetInspectionStartedAt
+                    )
             } else {
-                targetURL = child.standardizedFileURL
-                targetMetadata = childMetadata
+                targetURL =
+                    child.standardizedFileURL
+
+                targetMetadata =
+                    childMetadata
             }
 
             guard targetMetadata.existed else {
@@ -136,7 +304,9 @@ private extension PathWalker {
                     depth: depth + 1,
                     entries: &entries,
                     visited: &visited,
-                    emitCurrentDirectory: configuration.emitDirectories
+                    emitCurrentDirectory:
+                        configuration.emitDirectories,
+                    timings: &timings
                 )
 
             case .file:
