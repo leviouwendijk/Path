@@ -235,10 +235,13 @@ public extension PathAccessScope {
             ),
             inferFileType: type == .file
         )
-
-        return try sandbox.sandbox(
+        let descendant = try DescendantPath(
             path,
-            policy: policy,
+            from: root
+        )
+
+        return try requireAccessible(
+            descendant,
             type: type
         )
     }
