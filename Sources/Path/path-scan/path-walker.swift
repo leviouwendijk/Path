@@ -206,7 +206,10 @@ private extension PathWalker {
             return
         }
 
-        if emitCurrentDirectory {
+        if emitCurrentDirectory,
+           try shouldEmitDirectory(
+                standardizedDirectory
+           ) {
             entries.append(
                 makeEntry(
                     url: standardizedDirectory,
@@ -333,6 +336,27 @@ private extension PathWalker {
             case .symlink, .other:
                 continue
             }
+        }
+    }
+
+    func shouldEmitDirectory(
+        _ directory: URL
+    ) throws -> Bool {
+        guard let state = configuration.directoryState else {
+            return true
+        }
+
+        let isEmpty = try DirectoryInspector(
+            directory,
+            fileSystem: fileSystem
+        ).isEmpty()
+
+        switch state {
+        case .empty:
+            return isEmpty
+
+        case .nonempty:
+            return !isEmpty
         }
     }
 
