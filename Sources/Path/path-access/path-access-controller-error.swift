@@ -3,7 +3,7 @@ import Foundation
 public enum PathAccessControllerError: Error, LocalizedError, Sendable, Equatable {
     case rootNotFound(PathAccessRootIdentifier)
     case defaultRootUnavailable
-    case scopedPathRootMismatch(
+    case rootMismatch(
         rootIdentifier: PathAccessRootIdentifier,
         expectedRoot: StandardPath,
         actualRoot: StandardPath
@@ -17,9 +17,9 @@ public enum PathAccessControllerError: Error, LocalizedError, Sendable, Equatabl
         case .defaultRootUnavailable:
             return "No default path access root is configured."
 
-        case .scopedPathRootMismatch(let rootIdentifier, let expectedRoot, let actualRoot):
+        case .rootMismatch(let rootIdentifier, let expectedRoot, let actualRoot):
             return """
-            Scoped path root mismatch for root '\(rootIdentifier.rawValue)'. \
+            Path root mismatch for root '\(rootIdentifier.rawValue)'. \
             Expected '\(expectedRoot.render(as: .root, filetype: false))', \
             got '\(actualRoot.render(as: .root, filetype: false))'.
             """

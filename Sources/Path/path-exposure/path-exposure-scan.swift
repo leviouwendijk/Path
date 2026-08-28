@@ -7,9 +7,6 @@ public enum PathExposureScan {
         let root = PathNormalization.root(
             specification.root
         )
-        let sandbox = try PathSandbox(
-            root: root
-        )
 
         let result = try PathScan.scan(
             fullTreeSpecification(),
@@ -20,7 +17,6 @@ public enum PathExposureScan {
         var entries = exposureEntries(
             from: result,
             root: root,
-            sandbox: sandbox,
             specification: specification
         )
 
@@ -103,30 +99,22 @@ private extension PathExposureScan {
     static func exposureEntries(
         from result: PathScanResult,
         root: StandardPath,
-        sandbox: PathSandbox,
         specification: PathExposureScanSpecification
     ) -> [PathExposureEntry] {
         result.matches.compactMap { match in
-            guard let relative = sandbox.tree.relative(
-                match.path
-            ) else {
+            guard let descendant = try? DescendantPath(
+                match.path,
+                from: root
+            ),
+            !descendant.relative.segments.isEmpty else {
                 return nil
             }
-
-            guard !relative.segments.isEmpty else {
-                return nil
-            }
-
-            let scoped = ScopedPath(
-                root: root,
-                relative: relative
-            )
             let baseline = specification.baselinePolicy.evaluate(
-                scoped,
+                descendant,
                 type: match.type
             )
             let proposed = specification.proposedPolicy.evaluate(
-                scoped,
+                descendant,
                 type: match.type
             )
 
@@ -135,7 +123,7 @@ private extension PathExposureScan {
             }
 
             return .init(
-                path: scoped,
+                path: descendant,
                 type: match.type,
                 baseline: baseline,
                 proposed: proposed,
@@ -256,7 +244,7 @@ private extension PathExposureScan {
 
     static func denyRule(
         for rule: PathSensitivityRule,
-        path: ScopedPath,
+        path: DescendantPath,
         type: PathSegmentType
     ) -> PathAccessRule? {
         guard let suggestion = rule.suggestedDeny else {
@@ -318,7 +306,7 @@ private extension PathExposureScan {
     }
 
     static func parentDenyRule(
-        for path: ScopedPath,
+        for path: DescendantPath,
         reason: String?
     ) -> PathAccessRule? {
         guard let parent = path.parentPath else {
@@ -350,7 +338,7 @@ private extension PathExposureScan {
     }
 
     static func exactPathDenyRule(
-        for path: ScopedPath,
+        for path: DescendantPath,
         type: PathSegmentType,
         reason: String?
     ) -> PathAccessRule {
@@ -481,15 +469,16 @@ private enum PathDenySuggestionBuilder {
     }
 
     static func parentSuggestion(
-        parent: ScopedPath?,
+        parent: DescendantPath?,
         findings: [PathExposureFinding],
         entries: [PathExposureEntry],
         configuration: PathExposureScanConfiguration
     ) -> PathDenySuggestion? {
         guard let parent,
               findings.count > 1,
+              let child = parent.childSentinel,
               let rule = PathExposureScan.parentDenyRule(
-                for: parent.childSentinel,
+                for: child,
                 reason: "Deny sensitive parent cluster."
               ) else {
             return nil
@@ -606,22 +595,28 @@ private enum PathDenySuggestionBuilder {
     }
 }
 
-private extension ScopedPath {
+private extension DescendantPath {
     var hasHiddenComponent: Bool {
         relative.segments.contains {
             $0.value.hasPrefix(".")
         }
     }
 
-    var parentPath: ScopedPath? {
+    var parentPath: DescendantPath? {
         guard let parent = relative.parent(),
               !parent.segments.isEmpty else {
             return nil
         }
 
-        return ScopedPath(
-            root: root,
-            relative: parent
+        let path = StandardPath(
+            from: root,
+            parent.segments.map(\.value),
+            filetype: parent.filetype
+        )
+
+        return try? DescendantPath(
+            path,
+            from: root
         )
     }
 
@@ -629,18 +624,18 @@ private extension ScopedPath {
         parentPath?.presentingRelative(filetype: false) ?? ""
     }
 
-    var childSentinel: ScopedPath {
-        let sentinel = StandardPath(
-            from: relative,
+    var childSentinel: DescendantPath? {
+        let path = StandardPath(
+            from: absolute,
             [
                 "__path_exposure_child__"
             ],
             filetype: nil
         )
 
-        return ScopedPath(
-            root: root,
-            relative: sentinel
+        return try? DescendantPath(
+            path,
+            from: root
         )
     }
 }

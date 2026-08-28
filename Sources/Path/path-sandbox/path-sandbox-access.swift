@@ -5,10 +5,10 @@ public extension PathSandbox {
         _ path: StandardPath,
         policy: PathAccessPolicy,
         type: PathSegmentType? = nil
-    ) throws -> ScopedPath {
-        let scoped = try sandbox(path)
+    ) throws -> DescendantPath {
+        let descendant = try sandbox(path)
         let evaluation = policy.evaluate(
-            scoped,
+            descendant,
             type: type
         )
 
@@ -16,7 +16,7 @@ public extension PathSandbox {
             throw PathAccessError.denied(evaluation)
         }
 
-        return scoped
+        return descendant
     }
 
     func sandbox(
@@ -24,13 +24,13 @@ public extension PathSandbox {
         filetype: AnyFileType? = nil,
         policy: PathAccessPolicy,
         type: PathSegmentType? = nil
-    ) throws -> ScopedPath {
-        let scoped = try sandbox(
+    ) throws -> DescendantPath {
+        let descendant = try sandbox(
             rawPath: rawPath,
             filetype: filetype
         )
         let evaluation = policy.evaluate(
-            scoped,
+            descendant,
             type: type
         )
 
@@ -38,11 +38,11 @@ public extension PathSandbox {
             throw PathAccessError.denied(evaluation)
         }
 
-        return scoped
+        return descendant
     }
 
     func contains(
-        _ path: ScopedPath,
+        _ path: DescendantPath,
         policy: PathAccessPolicy,
         type: PathSegmentType? = nil
     ) -> Bool {

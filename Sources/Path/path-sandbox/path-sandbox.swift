@@ -20,31 +20,25 @@ public struct PathSandbox: Sendable, Codable, Equatable, Hashable {
 
     public func sandbox(
         _ path: StandardPath
-    ) throws -> ScopedPath {
+    ) throws -> DescendantPath {
         let relative = try PathNormalization.relative(
             to: root,
             path
         )
+        let absolute = try tree.appending(
+            relative
+        )
 
-        let absolute = try tree.appending(relative)
-
-        guard tree.descends(absolute) else {
-            throw PathSandboxError.pathEscapesSandbox(
-                path: path,
-                root: root
-            )
-        }
-
-        return ScopedPath(
-            root: root,
-            relative: relative
+        return try DescendantPath(
+            absolute,
+            from: root
         )
     }
 
     public func sandbox(
         rawPath: String,
         filetype: AnyFileType? = nil
-    ) throws -> ScopedPath {
+    ) throws -> DescendantPath {
         try sandbox(
             PathStrictRelativeNormalization.path(
                 rawPath: rawPath,
@@ -57,7 +51,7 @@ public struct PathSandbox: Sendable, Codable, Equatable, Hashable {
     // public func sandbox(
     //     rawPath: String,
     //     filetype: AnyFileType? = nil
-    // ) throws -> ScopedPath {
+    // ) throws -> DescendantPath {
     //     try sandbox(
     //         StandardPath(
     //             rawPath: rawPath,
@@ -69,15 +63,15 @@ public struct PathSandbox: Sendable, Codable, Equatable, Hashable {
     public func contains(
         _ path: StandardPath
     ) -> Bool {
-        guard let scoped = try? sandbox(path) else {
+        guard let descendant = try? sandbox(path) else {
             return false
         }
 
-        return scoped.root == root
+        return descendant.root == root
     }
 
     public func contains(
-        _ path: ScopedPath
+        _ path: DescendantPath
     ) -> Bool {
         path.root == root
     }

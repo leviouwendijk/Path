@@ -14,7 +14,7 @@ public struct PathAccessRule: Sendable, Codable, Equatable, Hashable {
     }
 
     func matches(
-        _ path: ScopedPath,
+        _ path: DescendantPath,
         type: PathSegmentType? = nil
     ) -> Bool {
         matcher.matches(

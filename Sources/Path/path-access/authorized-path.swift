@@ -2,26 +2,35 @@ import Foundation
 
 public struct AuthorizedPath: Sendable, Codable, Hashable {
     public let rootIdentifier: PathAccessRootIdentifier
-    public let scopedPath: ScopedPath
+    public let path: DescendantPath
     public let absoluteURL: URL
     public let presentationPath: String
     public let evaluation: PathAccessEvaluation
     public let policyChecks: [String]
 
-    public init(
-        rootIdentifier: PathAccessRootIdentifier,
-        scopedPath: ScopedPath,
-        absoluteURL: URL,
-        presentationPath: String,
+    private enum CodingKeys: String, CodingKey {
+        case rootIdentifier
+        case path = "scopedPath"
+        case absoluteURL
+        case presentationPath
+        case evaluation
+        case policyChecks
+    }
+
+    init(
+        root: PathAccessRootIdentifier,
+        path: DescendantPath,
+        url: URL,
+        presentation: String,
         evaluation: PathAccessEvaluation,
-        policyChecks: [String]
+        checks: [String]
     ) {
-        self.rootIdentifier = rootIdentifier
-        self.scopedPath = scopedPath
-        self.absoluteURL = absoluteURL
-        self.presentationPath = presentationPath
+        self.rootIdentifier = root
+        self.path = path
+        self.absoluteURL = url
+        self.presentationPath = presentation
         self.evaluation = evaluation
-        self.policyChecks = policyChecks
+        self.policyChecks = checks
     }
 }
 

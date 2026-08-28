@@ -4,14 +4,14 @@ public enum PathExposureStatus: String, Sendable, Codable, Equatable, Hashable, 
 }
 
 public struct PathExposureEntry: Sendable, Codable, Equatable, Hashable {
-    public var path: ScopedPath
+    public var path: DescendantPath
     public var type: PathSegmentType
     public var baseline: PathAccessEvaluation
     public var proposed: PathAccessEvaluation
     public var status: PathExposureStatus
 
     public init(
-        path: ScopedPath,
+        path: DescendantPath,
         type: PathSegmentType,
         baseline: PathAccessEvaluation,
         proposed: PathAccessEvaluation,
@@ -30,7 +30,7 @@ public struct PathExposureEntry: Sendable, Codable, Equatable, Hashable {
 }
 
 public struct PathExposureFinding: Sendable, Codable, Equatable, Hashable {
-    public var path: ScopedPath
+    public var path: DescendantPath
     public var type: PathSegmentType
     public var status: PathExposureStatus
     public var matchedRuleIDs: [String]
@@ -41,7 +41,7 @@ public struct PathExposureFinding: Sendable, Codable, Equatable, Hashable {
     public var suggestedDenyRule: PathAccessRule?
 
     public init(
-        path: ScopedPath,
+        path: DescendantPath,
         type: PathSegmentType,
         status: PathExposureStatus,
         matchedRuleIDs: [String],
@@ -64,14 +64,14 @@ public struct PathExposureFinding: Sendable, Codable, Equatable, Hashable {
 }
 
 public struct PathExposureGroup: Sendable, Codable, Equatable, Hashable {
-    public var parentPath: ScopedPath?
+    public var parentPath: DescendantPath?
     public var count: Int
     public var highestSeverity: PathSensitivitySeverity
     public var commonPatternSuggestion: PathDenySuggestion?
     public var findings: [PathExposureFinding]
 
     public init(
-        parentPath: ScopedPath?,
+        parentPath: DescendantPath?,
         count: Int,
         highestSeverity: PathSensitivitySeverity,
         commonPatternSuggestion: PathDenySuggestion? = nil,

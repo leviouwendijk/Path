@@ -17,7 +17,7 @@ public struct PathSensitivityProfile: Sendable, Codable, Equatable, Hashable, Id
 
 public extension PathSensitivityProfile {
     func matchedRules(
-        for path: ScopedPath,
+        for path: DescendantPath,
         type: PathSegmentType? = nil
     ) -> [PathSensitivityRule] {
         rules.filter {

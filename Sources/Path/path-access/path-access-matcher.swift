@@ -23,7 +23,7 @@ public extension PathAccessMatcher {
     }
 
     func matches(
-        _ path: ScopedPath,
+        _ path: DescendantPath,
         type: PathSegmentType? = nil
     ) -> Bool {
         switch self {
@@ -55,7 +55,7 @@ public extension PathAccessMatcher {
 private extension PathAccessMatcher {
     func expressionMatches(
         _ expression: PathExpression,
-        path: ScopedPath,
+        path: DescendantPath,
         type: PathSegmentType?
     ) -> Bool {
         let anchor = PathAnchor.directoryPath(path.root)

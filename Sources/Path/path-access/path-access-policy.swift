@@ -15,7 +15,7 @@ public struct PathAccessPolicy: Sendable, Codable, Equatable, Hashable {
 
 public extension PathAccessPolicy {
     func evaluate(
-        _ path: ScopedPath,
+        _ path: DescendantPath,
         type: PathSegmentType? = nil
     ) -> PathAccessEvaluation {
         for rule in rules {
@@ -41,7 +41,7 @@ public extension PathAccessPolicy {
     }
 
     func allows(
-        _ path: ScopedPath,
+        _ path: DescendantPath,
         type: PathSegmentType? = nil
     ) -> Bool {
         evaluate(
@@ -51,7 +51,7 @@ public extension PathAccessPolicy {
     }
 
     func denies(
-        _ path: ScopedPath,
+        _ path: DescendantPath,
         type: PathSegmentType? = nil
     ) -> Bool {
         !allows(

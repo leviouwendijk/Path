@@ -94,12 +94,12 @@ public extension PathAccessController {
         }
 
         public func report(
-            _ scopedPaths: [ScopedPath],
+            _ descendants: [DescendantPath],
             rootIdentifier: PathAccessRootIdentifier? = nil,
             type: PathSegmentType? = nil
         ) -> PathAuthorizationReport {
             report(
-                scopedPaths.enumerated().map { index, path in
+                descendants.enumerated().map { index, path in
                     .init(
                         index: index,
                         input: path.presentingRelative(

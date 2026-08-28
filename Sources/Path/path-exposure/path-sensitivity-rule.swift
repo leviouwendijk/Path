@@ -57,7 +57,7 @@ public struct PathSensitivityRule: Sendable, Codable, Equatable, Hashable, Ident
 
 public extension PathSensitivityRule {
     func matches(
-        _ path: ScopedPath,
+        _ path: DescendantPath,
         type: PathSegmentType? = nil
     ) -> Bool {
         matcher.matches(

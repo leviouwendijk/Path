@@ -64,7 +64,7 @@ public struct PathDenySuggestion: Sendable, Codable, Equatable, Hashable, Identi
     public var rule: PathAccessRule
     public var coverageCount: Int
     public var collateralCount: Int
-    public var collateralExamples: [ScopedPath]
+    public var collateralExamples: [DescendantPath]
     public var confidence: PathDenySuggestionConfidence
     public var score: PathDenySuggestionScore
     public var reason: String
@@ -74,7 +74,7 @@ public struct PathDenySuggestion: Sendable, Codable, Equatable, Hashable, Identi
         rule: PathAccessRule,
         coverageCount: Int,
         collateralCount: Int,
-        collateralExamples: [ScopedPath] = [],
+        collateralExamples: [DescendantPath] = [],
         confidence: PathDenySuggestionConfidence,
         score: PathDenySuggestionScore,
         reason: String

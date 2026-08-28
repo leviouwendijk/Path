@@ -228,7 +228,7 @@ public extension PathAccessController {
 
 public extension PathAccessController {
     func evaluate(
-        _ scopedPath: ScopedPath,
+        _ descendant: DescendantPath,
         rootIdentifier: PathAccessRootIdentifier? = nil,
         type: PathSegmentType? = nil
     ) throws -> PathAccessEvaluation {
@@ -236,16 +236,16 @@ public extension PathAccessController {
             identifier: rootIdentifier
         )
 
-        guard root.scope.sandbox.contains(scopedPath) else {
-            throw PathAccessControllerError.scopedPathRootMismatch(
+        guard root.scope.sandbox.contains(descendant) else {
+            throw PathAccessControllerError.rootMismatch(
                 rootIdentifier: root.id,
                 expectedRoot: root.scope.root,
-                actualRoot: scopedPath.root
+                actualRoot: descendant.root
             )
         }
 
         return root.scope.evaluate(
-            scopedPath,
+            descendant,
             type: type
         )
     }
@@ -258,12 +258,12 @@ public extension PathAccessController {
         let root = try root(
             identifier: rootIdentifier
         )
-        let scopedPath = try root.scope.sandbox.sandbox(
+        let descendant = try root.scope.sandbox.sandbox(
             path
         )
 
         return root.scope.evaluate(
-            scopedPath,
+            descendant,
             type: type ?? inferredType(
                 for: path
             )
@@ -279,44 +279,44 @@ public extension PathAccessController {
         let root = try root(
             identifier: rootIdentifier
         )
-        let scopedPath = try root.scope.sandbox.sandbox(
+        let descendant = try root.scope.sandbox.sandbox(
             rawPath: rawPath,
             filetype: filetype
         )
 
         return root.scope.evaluate(
-            scopedPath,
+            descendant,
             type: type ?? hintedType(
                 rawPath: rawPath,
                 filetype: filetype,
-                resolved: scopedPath
+                resolved: descendant
             )
         )
     }
 
     @discardableResult
     func require(
-        _ scopedPath: ScopedPath,
+        _ descendant: DescendantPath,
         rootIdentifier: PathAccessRootIdentifier? = nil,
         type: PathSegmentType? = nil
-    ) throws -> ScopedPath {
+    ) throws -> DescendantPath {
         let root = try root(
             identifier: rootIdentifier
         )
 
         return try root.scope.requireAccessible(
-            scopedPath,
+            descendant,
             type: type
         )
     }
 
     func contains(
-        _ scopedPath: ScopedPath,
+        _ descendant: DescendantPath,
         rootIdentifier: PathAccessRootIdentifier? = nil,
         type: PathSegmentType? = nil
     ) -> Bool {
         (try? require(
-            scopedPath,
+            descendant,
             rootIdentifier: rootIdentifier,
             type: type
         )) != nil
@@ -328,7 +328,7 @@ public extension PathAccessController {
         _ path: StandardPath,
         rootIdentifier: PathAccessRootIdentifier? = nil,
         type: PathSegmentType? = nil
-    ) throws -> ScopedPath {
+    ) throws -> DescendantPath {
         let root = try root(
             identifier: rootIdentifier
         )
@@ -344,7 +344,7 @@ public extension PathAccessController {
         rootIdentifier: PathAccessRootIdentifier? = nil,
         filetype: AnyFileType? = nil,
         type: PathSegmentType? = nil
-    ) throws -> ScopedPath {
+    ) throws -> DescendantPath {
         let root = try root(
             identifier: rootIdentifier
         )
@@ -360,7 +360,7 @@ public extension PathAccessController {
         _ url: URL,
         rootIdentifier: PathAccessRootIdentifier? = nil,
         type: PathSegmentType? = nil
-    ) throws -> ScopedPath {
+    ) throws -> DescendantPath {
         let root = try root(
             identifier: rootIdentifier
         )
@@ -372,7 +372,7 @@ public extension PathAccessController {
     }
 
     func absoluteURL(
-        for scopedPath: ScopedPath,
+        for descendant: DescendantPath,
         rootIdentifier: PathAccessRootIdentifier? = nil,
         type: PathSegmentType? = nil
     ) throws -> URL {
@@ -381,13 +381,13 @@ public extension PathAccessController {
         )
 
         return try root.scope.absoluteURL(
-            for: scopedPath,
+            for: descendant,
             type: type
         )
     }
 
     func existingType(
-        of scopedPath: ScopedPath,
+        of descendant: DescendantPath,
         rootIdentifier: PathAccessRootIdentifier? = nil
     ) throws -> PathSegmentType? {
         let root = try root(
@@ -395,14 +395,14 @@ public extension PathAccessController {
         )
 
         return try root.scope.existingType(
-            of: scopedPath
+            of: descendant
         )
     }
 }
 
 public extension PathAccessController {
     func authorize(
-        _ scopedPath: ScopedPath,
+        _ descendant: DescendantPath,
         rootIdentifier: PathAccessRootIdentifier? = nil,
         type: PathSegmentType? = nil
     ) throws -> AuthorizedPath {
@@ -410,7 +410,7 @@ public extension PathAccessController {
             identifier: rootIdentifier
         )
         let accessible = try root.scope.requireAccessible(
-            scopedPath,
+            descendant,
             type: type
         )
         let evaluation = root.scope.evaluate(
@@ -423,14 +423,14 @@ public extension PathAccessController {
         )
 
         return .init(
-            rootIdentifier: root.id,
-            scopedPath: accessible,
-            absoluteURL: absoluteURL,
-            presentationPath: accessible.presentingRelative(
+            root: root.id,
+            path: accessible,
+            url: absoluteURL,
+            presentation: accessible.presentingRelative(
                 filetype: true
             ),
             evaluation: evaluation,
-            policyChecks: [
+            checks: [
                 "root_resolved",
                 "path_sandboxed",
                 "path_policy_allowed"
@@ -446,13 +446,13 @@ public extension PathAccessController {
         let root = try root(
             identifier: rootIdentifier
         )
-        let scopedPath = try root.scope.resolve(
+        let descendant = try root.scope.resolve(
             path,
             type: type
         )
 
         return try authorize(
-            scopedPath,
+            descendant,
             rootIdentifier: root.id,
             type: type
         )
@@ -467,14 +467,14 @@ public extension PathAccessController {
         let root = try root(
             identifier: rootIdentifier
         )
-        let scopedPath = try root.scope.resolve(
+        let descendant = try root.scope.resolve(
             rawPath: rawPath,
             filetype: filetype,
             type: type
         )
 
         return try authorize(
-            scopedPath,
+            descendant,
             rootIdentifier: root.id,
             type: type
         )
@@ -495,15 +495,15 @@ public extension PathAccessController {
         )
     }
 
-    func scopedPaths(
+    func descendants(
         from result: PathScanResult,
         rootIdentifier: PathAccessRootIdentifier? = nil
-    ) throws -> [ScopedPath] {
+    ) throws -> [DescendantPath] {
         let root = try root(
             identifier: rootIdentifier
         )
 
-        return root.scope.scopedPaths(
+        return root.scope.descendants(
             from: result
         )
     }
@@ -520,14 +520,14 @@ public extension PathAccessController {
         )
 
         return try matches.compactMap { match in
-            guard let scopedPath = root.scope.scopedPath(
+            guard let descendant = root.scope.descendant(
                 from: match
             ) else {
                 return nil
             }
 
             return try authorize(
-                scopedPath,
+                descendant,
                 rootIdentifier: root.id,
                 type: match.type
             )
@@ -599,7 +599,7 @@ private extension PathAccessController {
     func hintedType(
         rawPath: String,
         filetype: AnyFileType?,
-        resolved: ScopedPath
+        resolved: DescendantPath
     ) -> PathSegmentType? {
         if filetype != nil {
             return .file

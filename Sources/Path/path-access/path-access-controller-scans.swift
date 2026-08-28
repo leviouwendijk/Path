@@ -36,11 +36,11 @@ public extension PathAccessController {
             )
         }
 
-        public func scoped(
+        public func descendants(
             _ specification: PathScanSpecification,
             rootIdentifier: PathAccessRootIdentifier? = nil,
             configuration: PathWalkConfiguration = .init()
-        ) throws -> [ScopedPath] {
+        ) throws -> [DescendantPath] {
             let root = try controller.root(
                 identifier: rootIdentifier
             )
@@ -50,7 +50,7 @@ public extension PathAccessController {
                 configuration: configuration
             )
 
-            return root.scope.scopedPaths(
+            return root.scope.descendants(
                 from: result
             )
         }

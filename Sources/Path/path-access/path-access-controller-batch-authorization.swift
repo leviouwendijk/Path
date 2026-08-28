@@ -10,24 +10,24 @@ public extension PathAccessController {
         let root = try root(
             identifier: rootIdentifier
         )
-        let scopedPath = try root.scope.scope(
+        let descendant = try root.scope.scope(
             url,
             type: type
         )
 
         return try authorize(
-            scopedPath,
+            descendant,
             rootIdentifier: root.id,
             type: type
         )
     }
 
     func authorize(
-        _ scopedPaths: [ScopedPath],
+        _ descendants: [DescendantPath],
         rootIdentifier: PathAccessRootIdentifier? = nil,
         type: PathSegmentType? = nil
     ) throws -> [AuthorizedPath] {
-        try scopedPaths.map {
+        try descendants.map {
             try authorize(
                 $0,
                 rootIdentifier: rootIdentifier,

@@ -89,7 +89,7 @@ public extension PathAccessScope {
 
 public extension PathAccessScope {
     func evaluate(
-        _ path: ScopedPath,
+        _ path: DescendantPath,
         type: PathSegmentType? = nil
     ) -> PathAccessEvaluation {
         policy.evaluate(
@@ -99,7 +99,7 @@ public extension PathAccessScope {
     }
 
     func allows(
-        _ path: ScopedPath,
+        _ path: DescendantPath,
         type: PathSegmentType? = nil
     ) -> Bool {
         contains(
@@ -109,7 +109,7 @@ public extension PathAccessScope {
     }
 
     func denies(
-        _ path: ScopedPath,
+        _ path: DescendantPath,
         type: PathSegmentType? = nil
     ) -> Bool {
         !allows(
@@ -119,7 +119,7 @@ public extension PathAccessScope {
     }
 
     func contains(
-        _ path: ScopedPath,
+        _ path: DescendantPath,
         type: PathSegmentType? = nil
     ) -> Bool {
         (try? require(
@@ -140,9 +140,9 @@ public extension PathAccessScope {
 
     @discardableResult
     func require(
-        _ path: ScopedPath,
+        _ path: DescendantPath,
         type: PathSegmentType? = nil
-    ) throws -> ScopedPath {
+    ) throws -> DescendantPath {
         guard sandbox.contains(path) else {
             throw PathSandboxError.pathEscapesSandbox(
                 path: path.absolute,
@@ -164,9 +164,9 @@ public extension PathAccessScope {
 
     @discardableResult
     func requireAccessible(
-        _ path: ScopedPath,
+        _ path: DescendantPath,
         type: PathSegmentType? = nil
-    ) throws -> ScopedPath {
+    ) throws -> DescendantPath {
         try require(
             path,
             type: type
@@ -178,7 +178,7 @@ public extension PathAccessScope {
     func resolve(
         _ path: StandardPath,
         type: PathSegmentType? = nil
-    ) throws -> ScopedPath {
+    ) throws -> DescendantPath {
         try sandbox.sandbox(
             path,
             policy: policy,
@@ -192,18 +192,18 @@ public extension PathAccessScope {
         rawPath: String,
         filetype: AnyFileType? = nil,
         type: PathSegmentType? = nil
-    ) throws -> ScopedPath {
-        let scoped = try sandbox.sandbox(
+    ) throws -> DescendantPath {
+        let descendant = try sandbox.sandbox(
             rawPath: rawPath,
             filetype: filetype
         )
 
         return try require(
-            scoped,
+            descendant,
             type: type ?? hintedType(
                 rawPath: rawPath,
                 filetype: filetype,
-                resolved: scoped
+                resolved: descendant
             )
         )
     }
@@ -212,7 +212,7 @@ public extension PathAccessScope {
         _ rawPath: String,
         filetype: AnyFileType? = nil,
         type: PathSegmentType? = nil
-    ) throws -> ScopedPath {
+    ) throws -> DescendantPath {
         try resolve(
             rawPath: rawPath,
             filetype: filetype,
@@ -223,7 +223,7 @@ public extension PathAccessScope {
     func scope(
         _ url: URL,
         type explicitType: PathSegmentType? = nil
-    ) throws -> ScopedPath {
+    ) throws -> DescendantPath {
         let existence = PathExistence.check(
             url: url
         )
@@ -244,7 +244,7 @@ public extension PathAccessScope {
     }
 
     func absoluteURL(
-        for path: ScopedPath,
+        for path: DescendantPath,
         type: PathSegmentType? = nil
     ) throws -> URL {
         let path = try require(
@@ -259,7 +259,7 @@ public extension PathAccessScope {
     }
 
     func existingType(
-        of path: ScopedPath
+        of path: DescendantPath
     ) throws -> PathSegmentType? {
         let url = try absoluteURL(
             for: path
@@ -276,54 +276,50 @@ public extension PathAccessScope {
         from result: PathScanResult
     ) -> [PathScanMatch] {
         result.matches.filter { match in
-            guard let scoped = scopedPath(
+            guard let path = descendant(
                 from: match
             ) else {
                 return false
             }
 
             return policy.allows(
-                scoped,
+                path,
                 type: match.type
             )
         }
     }
 
-    func scopedPaths(
+    func descendants(
         from result: PathScanResult
-    ) -> [ScopedPath] {
+    ) -> [DescendantPath] {
         filteredMatches(
             from: result
         ).compactMap {
-            scopedPath(
+            descendant(
                 from: $0
             )
         }
     }
 
-    func scopedPath(
+    func descendant(
         from match: PathScanMatch
-    ) -> ScopedPath? {
-        guard let relative = sandbox.tree.relative(
-            match.path
-        ) else {
+    ) -> DescendantPath? {
+        guard let path = try? DescendantPath(
+            match.path,
+            from: root
+        ),
+        !path.relative.segments.isEmpty else {
             return nil
         }
 
-        guard !relative.segments.isEmpty else {
-            return nil
-        }
-
-        return ScopedPath(
-            root: root,
-            relative: relative
-        )
+        return path
     }
+
 }
 
 private extension PathAccessScope {
     func absoluteURLUnchecked(
-        for path: ScopedPath,
+        for path: DescendantPath,
         type: PathSegmentType? = nil
     ) -> URL {
         URL(
@@ -350,7 +346,7 @@ private extension PathAccessScope {
     func hintedType(
         rawPath: String,
         filetype: AnyFileType?,
-        resolved: ScopedPath
+        resolved: DescendantPath
     ) -> PathSegmentType? {
         if filetype != nil {
             return .file

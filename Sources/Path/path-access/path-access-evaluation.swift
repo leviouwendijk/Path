@@ -1,11 +1,11 @@
 public struct PathAccessEvaluation: Sendable, Codable, Equatable, Hashable {
-    public let path: ScopedPath
+    public let path: DescendantPath
     public let type: PathSegmentType?
     public let decision: PathAccessDecision
     public let matchedRule: PathAccessRule?
 
     public init(
-        path: ScopedPath,
+        path: DescendantPath,
         type: PathSegmentType?,
         decision: PathAccessDecision,
         matchedRule: PathAccessRule?
