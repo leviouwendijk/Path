@@ -286,32 +286,6 @@ public extension PathTreeNode {
 }
 
 extension Array where Element == PathTreeNode {
-    func pathTreeNode(
-        at relativePath: StandardPath
-    ) -> PathTreeNode? {
-        guard let first = relativePath.segments.first else {
-            return nil
-        }
-
-        let terminal = relativePath.segments.count == 1
-
-        guard let index = pathTreeIndex(
-            matching: first,
-            filetype: terminal ? relativePath.filetype : nil,
-            matchFiletype: terminal
-        ) else {
-            return nil
-        }
-
-        if terminal {
-            return self[index]
-        }
-
-        return self[index].children.pathTreeNode(
-            at: relativePath.droppingFirstSegment()
-        )
-    }
-
     mutating func appendPathTreeNode(
         _ node: PathTreeNode,
         replacingExisting: Bool = false
@@ -328,78 +302,6 @@ extension Array where Element == PathTreeNode {
         }
 
         append(node)
-    }
-
-    mutating func insertPathTreeNode(
-        _ node: PathTreeNode,
-        under parent: StandardPath,
-        replacingExisting: Bool = false
-    ) throws {
-        guard let first = parent.segments.first else {
-            try appendPathTreeNode(
-                node,
-                replacingExisting: replacingExisting
-            )
-            return
-        }
-
-        let terminal = parent.segments.count == 1
-
-        guard let index = pathTreeIndex(
-            matching: first,
-            filetype: terminal ? parent.filetype : nil,
-            matchFiletype: terminal
-        ) else {
-            throw PathTreeModelError.destinationNotFound(parent)
-        }
-
-        guard self[index].isDirectory else {
-            throw PathTreeModelError.destinationIsFile(parent)
-        }
-
-        if terminal {
-            try self[index].append(
-                node,
-                replacingExisting: replacingExisting
-            )
-            return
-        }
-
-        try self[index].children.insertPathTreeNode(
-            node,
-            under: parent.droppingFirstSegment(),
-            replacingExisting: replacingExisting
-        )
-    }
-
-    mutating func removePathTreeNode(
-        at relativePath: StandardPath
-    ) throws -> PathTreeNode {
-        guard let first = relativePath.segments.first else {
-            throw PathTreeModelError.cannotMoveRoot
-        }
-
-        let terminal = relativePath.segments.count == 1
-
-        guard let index = pathTreeIndex(
-            matching: first,
-            filetype: terminal ? relativePath.filetype : nil,
-            matchFiletype: terminal
-        ) else {
-            throw PathTreeModelError.nodeNotFound(relativePath)
-        }
-
-        if terminal {
-            return remove(at: index)
-        }
-
-        guard self[index].isDirectory else {
-            throw PathTreeModelError.destinationIsFile(relativePath)
-        }
-
-        return try self[index].children.removePathTreeNode(
-            at: relativePath.droppingFirstSegment()
-        )
     }
 
     mutating func ensurePathTreePath(
