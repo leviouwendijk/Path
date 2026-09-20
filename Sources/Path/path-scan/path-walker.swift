@@ -95,7 +95,8 @@ public struct PathWalker {
             Date()
 
         let rootMetadata = try FileInspector(
-            inspectedRoot
+            inspectedRoot,
+            fileSystem: fileSystem
         ).inspect()
 
         timings.metadataInspectionDuration +=
@@ -326,7 +327,8 @@ private extension PathWalker {
 
                 let targetMetadata =
                     try FileInspector(
-                        targetURL
+                        targetURL,
+                        fileSystem: fileSystem
                     )
                     .inspect()
 
