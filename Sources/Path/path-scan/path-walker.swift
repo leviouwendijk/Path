@@ -5,6 +5,7 @@ import Primitives
 struct PathWalkStatistics {
     let totalDuration: TimeInterval
     let directoryEnumerationDuration: TimeInterval
+    let directoryEmptinessProbeDuration: TimeInterval
     let childSortingDuration: TimeInterval
     let metadataInspectionDuration: TimeInterval
     let resultSortingDuration: TimeInterval
@@ -14,6 +15,7 @@ struct PathWalkStatistics {
             0,
             totalDuration
                 - directoryEnumerationDuration
+                - directoryEmptinessProbeDuration
                 - childSortingDuration
                 - metadataInspectionDuration
                 - resultSortingDuration
@@ -28,6 +30,7 @@ struct PathWalkMeasuredResult {
 
 private struct PathWalkTimingAccumulator {
     var directoryEnumerationDuration: TimeInterval = 0
+    var directoryEmptinessProbeDuration: TimeInterval = 0
     var childSortingDuration: TimeInterval = 0
     var metadataInspectionDuration: TimeInterval = 0
 }
@@ -115,6 +118,8 @@ public struct PathWalker {
                         ),
                     directoryEnumerationDuration:
                         timings.directoryEnumerationDuration,
+                    directoryEmptinessProbeDuration:
+                        timings.directoryEmptinessProbeDuration,
                     childSortingDuration:
                         timings.childSortingDuration,
                     metadataInspectionDuration:
@@ -144,6 +149,8 @@ public struct PathWalker {
                         ),
                     directoryEnumerationDuration:
                         timings.directoryEnumerationDuration,
+                    directoryEmptinessProbeDuration:
+                        timings.directoryEmptinessProbeDuration,
                     childSortingDuration:
                         timings.childSortingDuration,
                     metadataInspectionDuration:
@@ -224,7 +231,8 @@ public struct PathWalker {
 
         out = try applying_directory_state(
             to: out,
-            known_empty: directory_is_empty
+            known_empty: directory_is_empty,
+            timings: &timings
         )
 
         let resultSortingStartedAt =
@@ -248,6 +256,8 @@ public struct PathWalker {
                     ),
                 directoryEnumerationDuration:
                     timings.directoryEnumerationDuration,
+                directoryEmptinessProbeDuration:
+                    timings.directoryEmptinessProbeDuration,
                 childSortingDuration:
                     timings.childSortingDuration,
                 metadataInspectionDuration:
@@ -285,6 +295,11 @@ private extension PathWalker {
                 options: enumerationOptions
             )
 
+        timings.directoryEnumerationDuration +=
+            Date().timeIntervalSince(
+                enumerationStartedAt
+            )
+
         if configuration.emitDirectories,
            configuration.directoryState != nil {
             let isEmpty: Bool
@@ -292,21 +307,23 @@ private extension PathWalker {
             if !children.isEmpty || configuration.includeHidden {
                 isEmpty = children.isEmpty
             } else {
+                let probeStartedAt = Date()
+
                 isEmpty = try DirectoryInspector(
                     parent.url,
                     fileSystem: fileSystem
                 ).isEmpty()
+
+                timings.directoryEmptinessProbeDuration +=
+                    Date().timeIntervalSince(
+                        probeStartedAt
+                    )
             }
 
             directory_is_empty[
                 parent.url.standardizedFileURL
             ] = isEmpty
         }
-
-        timings.directoryEnumerationDuration +=
-            Date().timeIntervalSince(
-                enumerationStartedAt
-            )
 
         let childSortingStartedAt =
             Date()
@@ -406,7 +423,8 @@ private extension PathWalker {
 
     func applying_directory_state(
         to entries: [PathWalkEntry],
-        known_empty: [URL: Bool]
+        known_empty: [URL: Bool],
+        timings: inout PathWalkTimingAccumulator
     ) throws -> [PathWalkEntry] {
         guard let state = configuration.directoryState,
               configuration.emitDirectories else {
@@ -424,10 +442,17 @@ private extension PathWalker {
             if let known = known_empty[key] {
                 isEmpty = known
             } else {
+                let probeStartedAt = Date()
+
                 isEmpty = try DirectoryInspector(
                     entry.url,
                     fileSystem: fileSystem
                 ).isEmpty()
+
+                timings.directoryEmptinessProbeDuration +=
+                    Date().timeIntervalSince(
+                        probeStartedAt
+                    )
             }
 
             switch state {

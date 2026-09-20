@@ -86,6 +86,9 @@ public struct PathScanPhysicalTraversalStatistics:
     public let directoryEnumerationDuration:
         TimeInterval
 
+    public let directoryEmptinessProbeDuration:
+        TimeInterval
+
     public let childSortingDuration:
         TimeInterval
 
@@ -104,6 +107,8 @@ public struct PathScanPhysicalTraversalStatistics:
         entryCount: Int,
         logicalRootCount: Int,
         directoryEnumerationDuration:
+            TimeInterval = 0,
+        directoryEmptinessProbeDuration:
             TimeInterval = 0,
         childSortingDuration:
             TimeInterval = 0,
@@ -128,6 +133,9 @@ public struct PathScanPhysicalTraversalStatistics:
 
         self.directoryEnumerationDuration =
             directoryEnumerationDuration
+
+        self.directoryEmptinessProbeDuration =
+            directoryEmptinessProbeDuration
 
         self.childSortingDuration =
             childSortingDuration
@@ -631,6 +639,9 @@ public enum PathScanner {
                     directoryEnumerationDuration:
                         walkStatistics
                         .directoryEnumerationDuration,
+                    directoryEmptinessProbeDuration:
+                        walkStatistics
+                        .directoryEmptinessProbeDuration,
                     childSortingDuration:
                         walkStatistics
                         .childSortingDuration,
