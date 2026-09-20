@@ -85,6 +85,7 @@ public struct PathWalker {
         var timings =
             PathWalkTimingAccumulator()
 
+        var directory_is_empty: [URL: Bool] = [:]
         var out: [PathWalkEntry] = []
 
         let inspectedRoot = fileSystem.resolve(
@@ -163,7 +164,8 @@ public struct PathWalker {
         ) { located in
             try self.expansion_children(
                 of: located.value,
-                timings: &timings
+                timings: &timings,
+                directory_is_empty: &directory_is_empty
             )
         }
 
@@ -201,10 +203,7 @@ public struct PathWalker {
 
             switch value.type {
             case .directory:
-                guard configuration.emitDirectories,
-                      try shouldEmitDirectory(
-                        value.url
-                      ) else {
+                guard configuration.emitDirectories else {
                     continue
                 }
 
@@ -222,6 +221,11 @@ public struct PathWalker {
                 )
             )
         }
+
+        out = try applying_directory_state(
+            to: out,
+            known_empty: directory_is_empty
+        )
 
         let resultSortingStartedAt =
             Date()
@@ -258,7 +262,8 @@ public struct PathWalker {
 private extension PathWalker {
     func expansion_children(
         of parent: PathWalkExpansionValue,
-        timings: inout PathWalkTimingAccumulator
+        timings: inout PathWalkTimingAccumulator,
+        directory_is_empty: inout [URL: Bool]
     ) throws -> [PathWalkExpansionValue] {
         guard parent.type == .directory else {
             return []
@@ -267,12 +272,36 @@ private extension PathWalker {
         let enumerationStartedAt =
             Date()
 
+        let enumerationOptions: FileManager.DirectoryEnumerationOptions =
+            configuration.includeHidden
+                ? []
+                : .skipsHiddenFiles
+
         let children =
             try fileSystem
             .directory
             .entries(
-                parent.url
+                parent.url,
+                options: enumerationOptions
             )
+
+        if configuration.emitDirectories,
+           configuration.directoryState != nil {
+            let isEmpty: Bool
+
+            if !children.isEmpty || configuration.includeHidden {
+                isEmpty = children.isEmpty
+            } else {
+                isEmpty = try DirectoryInspector(
+                    parent.url,
+                    fileSystem: fileSystem
+                ).isEmpty()
+            }
+
+            directory_is_empty[
+                parent.url.standardizedFileURL
+            ] = isEmpty
+        }
 
         timings.directoryEnumerationDuration +=
             Date().timeIntervalSince(
@@ -301,13 +330,6 @@ private extension PathWalker {
         for childEntry in sortedChildren {
             let child =
                 childEntry.url
-
-            if !configuration.includeHidden,
-               child.lastPathComponent.hasPrefix(
-                    "."
-               ) {
-                continue
-            }
 
             let targetURL: URL
             let targetKind: FileKind
@@ -382,24 +404,39 @@ private extension PathWalker {
         return discovered
     }
 
-    func shouldEmitDirectory(
-        _ directory: URL
-    ) throws -> Bool {
-        guard let state = configuration.directoryState else {
-            return true
+    func applying_directory_state(
+        to entries: [PathWalkEntry],
+        known_empty: [URL: Bool]
+    ) throws -> [PathWalkEntry] {
+        guard let state = configuration.directoryState,
+              configuration.emitDirectories else {
+            return entries
         }
 
-        let isEmpty = try DirectoryInspector(
-            directory,
-            fileSystem: fileSystem
-        ).isEmpty()
+        return try entries.filter { entry in
+            guard entry.type == .directory else {
+                return true
+            }
 
-        switch state {
-        case .empty:
-            return isEmpty
+            let key = entry.url.standardizedFileURL
+            let isEmpty: Bool
 
-        case .nonempty:
-            return !isEmpty
+            if let known = known_empty[key] {
+                isEmpty = known
+            } else {
+                isEmpty = try DirectoryInspector(
+                    entry.url,
+                    fileSystem: fileSystem
+                ).isEmpty()
+            }
+
+            switch state {
+            case .empty:
+                return isEmpty
+
+            case .nonempty:
+                return !isEmpty
+            }
         }
     }
 

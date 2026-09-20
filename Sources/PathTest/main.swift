@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import IO
 import Path
 import Primitives
 
@@ -1132,6 +1133,140 @@ func test_path_walker() throws {
             root: missing
         ).walk().isEmpty,
         "walker missing root returns empty result"
+    )
+
+    let parityConfiguration = PathWalkConfiguration(
+        includeHidden: true,
+        followSymlinks: true
+    )
+
+    let foundationEntries = try PathWalker(
+        root: fixture.root,
+        configuration: parityConfiguration,
+        fileSystem: .foundation
+    )
+    .walk()
+
+    let cEntries = try PathWalker(
+        root: fixture.root,
+        configuration: parityConfiguration,
+        fileSystem: .c
+    )
+    .walk()
+
+    try expect(
+        cEntries == foundationEntries,
+        "PathWalker C and Foundation backends preserve traversal semantics"
+    )
+
+    let stateRoot = fixture.base.appendingPathComponent(
+        "directory-state",
+        isDirectory: true
+    )
+
+    let emptyDirectory = stateRoot.appendingPathComponent(
+        "empty",
+        isDirectory: true
+    )
+
+    let visibleNonemptyDirectory = stateRoot.appendingPathComponent(
+        "visible-nonempty",
+        isDirectory: true
+    )
+
+    let hiddenOnlyDirectory = stateRoot.appendingPathComponent(
+        "hidden-only",
+        isDirectory: true
+    )
+
+    try FileManager.default.createDirectory(
+        at: emptyDirectory,
+        withIntermediateDirectories: true
+    )
+
+    try FileManager.default.createDirectory(
+        at: visibleNonemptyDirectory,
+        withIntermediateDirectories: true
+    )
+
+    try FileManager.default.createDirectory(
+        at: hiddenOnlyDirectory,
+        withIntermediateDirectories: true
+    )
+
+    try Data(
+        "visible".utf8
+    ).write(
+        to: visibleNonemptyDirectory.appendingPathComponent(
+            "visible.txt"
+        )
+    )
+
+    try Data(
+        "hidden".utf8
+    ).write(
+        to: hiddenOnlyDirectory.appendingPathComponent(
+            ".hidden.txt"
+        )
+    )
+
+    let emptyDirectories = try PathWalker(
+        root: stateRoot,
+        configuration: .init(
+            includeHidden: false,
+            emitDirectories: true,
+            emitFiles: false,
+            directoryState: .empty
+        )
+    )
+    .walk()
+
+    try expect(
+        urls(emptyDirectories) == expected_urls(
+            emptyDirectory
+        ),
+        "directory-state empty preserves physical emptiness with hidden filtering pushed into IO"
+    )
+
+    let nonemptyConfiguration = PathWalkConfiguration(
+        includeHidden: false,
+        emitDirectories: true,
+        emitFiles: false,
+        directoryState: .nonempty
+    )
+
+    let nonemptyDirectories = try PathWalker(
+        root: stateRoot,
+        configuration: nonemptyConfiguration
+    )
+    .walk()
+
+    try expect(
+        urls(nonemptyDirectories) == expected_urls(
+            stateRoot,
+            visibleNonemptyDirectory,
+            hiddenOnlyDirectory
+        ),
+        "directory-state nonempty treats hidden-only directories as physically nonempty"
+    )
+
+    let foundationNonemptyDirectories = try PathWalker(
+        root: stateRoot,
+        configuration: nonemptyConfiguration,
+        fileSystem: .foundation
+    )
+    .walk()
+
+    let cNonemptyDirectories = try PathWalker(
+        root: stateRoot,
+        configuration: nonemptyConfiguration,
+        fileSystem: .c
+    )
+    .walk()
+
+    try expect(
+        cNonemptyDirectories == foundationNonemptyDirectories,
+        "directory-state filtering is equivalent across C and Foundation backends"
     )
 }
 

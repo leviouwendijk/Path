@@ -63,6 +63,7 @@ let package = Package(
             name: "PathTest",
             dependencies: [
                 "Path",
+                .leviouwendijk.IO,
                 .leviouwendijk.Primitives,
             ]
         ),
