@@ -1,5 +1,6 @@
 import Foundation
 import IO
+import Primitives
 
 struct PathWalkStatistics {
     let totalDuration: TimeInterval
@@ -29,6 +30,17 @@ private struct PathWalkTimingAccumulator {
     var directoryEnumerationDuration: TimeInterval = 0
     var childSortingDuration: TimeInterval = 0
     var metadataInspectionDuration: TimeInterval = 0
+}
+
+private struct PathWalkExpansionValue {
+    let source_url: URL
+    let url: URL
+    let type: PathSegmentType
+}
+
+private enum PathWalkExpansionIdentity: Hashable {
+    case directory(URL)
+    case file_source(URL)
 }
 
 public struct PathWalker {
@@ -139,17 +151,76 @@ public struct PathWalker {
             )
         }
 
-        var visited: Set<URL> = []
+        let expansion = TreeExpansion<PathWalkExpansionValue>(
+            roots: [
+                .init(
+                    source_url: root,
+                    url: root,
+                    type: .directory
+                ),
+            ]
+        ) { located in
+            try self.expansion_children(
+                of: located.value,
+                timings: &timings
+            )
+        }
 
-        try walkDirectory(
-            root,
-            depth: 0,
-            entries: &out,
-            visited: &visited,
-            emitCurrentDirectory:
-                configuration.emitDirectories,
-            timings: &timings
+        let limits = try TreeTraversalLimits(
+            maximum_depth: configuration.maxDepth
         )
+
+        let revisit = TreeExpansionRevisitPolicy<PathWalkExpansionValue>.global(
+            identity: { value -> PathWalkExpansionIdentity in
+                switch value.type {
+                case .directory:
+                    return .directory(
+                        self.resolvedVisitKey(
+                            for: value.url
+                        )
+                    )
+
+                case .file:
+                    return .file_source(
+                        value.source_url
+                    )
+                }
+            }
+        )
+
+        var iterator = expansion.walk(
+            .depth_first_preorder,
+            limits: limits,
+            revisit: revisit
+        )
+        .makeIterator()
+
+        while let located = try iterator.next() {
+            let value = located.value
+
+            switch value.type {
+            case .directory:
+                guard configuration.emitDirectories,
+                      try shouldEmitDirectory(
+                        value.url
+                      ) else {
+                    continue
+                }
+
+            case .file:
+                guard configuration.emitFiles else {
+                    continue
+                }
+            }
+
+            out.append(
+                makeEntry(
+                    url: value.url,
+                    depth: located.address.depth,
+                    type: value.type
+                )
+            )
+        }
 
         let resultSortingStartedAt =
             Date()
@@ -184,45 +255,12 @@ public struct PathWalker {
 }
 
 private extension PathWalker {
-    func walkDirectory(
-        _ directory: URL,
-        depth: Int,
-        entries: inout [PathWalkEntry],
-        visited: inout Set<URL>,
-        emitCurrentDirectory: Bool,
+    func expansion_children(
+        of parent: PathWalkExpansionValue,
         timings: inout PathWalkTimingAccumulator
-    ) throws {
-        let standardizedDirectory =
-            directory
-
-        let visitKey =
-            resolvedVisitKey(
-                for: standardizedDirectory
-            )
-
-        guard visited.insert(
-            visitKey
-        ).inserted else {
-            return
-        }
-
-        if emitCurrentDirectory,
-           try shouldEmitDirectory(
-                standardizedDirectory
-           ) {
-            entries.append(
-                makeEntry(
-                    url: standardizedDirectory,
-                    depth: depth,
-                    type: .directory
-                )
-            )
-        }
-
-        if let maxDepth =
-            configuration.maxDepth,
-           depth >= maxDepth {
-            return
+    ) throws -> [PathWalkExpansionValue] {
+        guard parent.type == .directory else {
+            return []
         }
 
         let enumerationStartedAt =
@@ -232,7 +270,7 @@ private extension PathWalker {
             try fileSystem
             .directory
             .entries(
-                standardizedDirectory
+                parent.url
             )
 
         timings.directoryEnumerationDuration +=
@@ -253,6 +291,11 @@ private extension PathWalker {
             Date().timeIntervalSince(
                 childSortingStartedAt
             )
+
+        var discovered: [PathWalkExpansionValue] = []
+        discovered.reserveCapacity(
+            sortedChildren.count
+        )
 
         for childEntry in sortedChildren {
             let child =
@@ -312,31 +355,29 @@ private extension PathWalker {
 
             switch targetKind {
             case .directory:
-                try walkDirectory(
-                    targetURL,
-                    depth: depth + 1,
-                    entries: &entries,
-                    visited: &visited,
-                    emitCurrentDirectory:
-                        configuration.emitDirectories,
-                    timings: &timings
+                discovered.append(
+                    .init(
+                        source_url: child,
+                        url: targetURL,
+                        type: .directory
+                    )
                 )
 
             case .file:
-                if configuration.emitFiles {
-                    entries.append(
-                        makeEntry(
-                            url: targetURL,
-                            depth: depth + 1,
-                            type: .file
-                        )
+                discovered.append(
+                    .init(
+                        source_url: child,
+                        url: targetURL,
+                        type: .file
                     )
-                }
+                )
 
             case .symlink, .other:
                 continue
             }
         }
+
+        return discovered
     }
 
     func shouldEmitDirectory(

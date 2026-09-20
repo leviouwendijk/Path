@@ -1,3 +1,5 @@
+import Primitives
+
 public struct PathTreeRenderOptions: Sendable, Codable, Equatable, Hashable {
     public var indentation: String
     public var includeRoot: Bool
@@ -44,23 +46,60 @@ public extension PathTree {
 
         if options.includeRoot {
             lines.append(
-                renderedRootName(options)
+                renderedRootName(
+                    options
+                )
             )
             child_depth = 1
         } else {
             child_depth = 0
         }
 
-        for child in options.ordered(children) {
-            lines.append(
-                contentsOf: child.renderLines(
-                    depth: child_depth,
-                    options: options
+        let root_order: TreeRootOrderPolicy<PathTreeValue>
+        let child_order: TreeChildOrderPolicy<PathTreeValue>
+
+        if options.sortChildren {
+            root_order = .sorted_by_value { lhs, rhs in
+                lhs.rendered_component
+                    < rhs.rendered_component
+            }
+
+            child_order = .sorted_by_value { lhs, rhs in
+                lhs.rendered_component
+                    < rhs.rendered_component
+            }
+        } else {
+            root_order = .natural
+            child_order = .natural
+        }
+
+        for located in structure.walk(
+            .depth_first_preorder,
+            root_order: root_order,
+            child_order: child_order
+        ) {
+            let depth = child_depth
+                + located.address.depth
+
+            let prefix = String(
+                repeating: options.indentation,
+                count: max(
+                    0,
+                    depth
                 )
+            )
+
+            lines.append(
+                prefix
+                    + located.node.value.rendered_name(
+                        trailing_slash_for_directories: options.includeTrailingSlashForDirectories
+                    )
             )
         }
 
-        return lines.joined(separator: "\n")
+        return lines.joined(
+            separator: "\n"
+        )
     }
 
     func render(

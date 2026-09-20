@@ -20,10 +20,15 @@ let package = Package(
             name: "PathParsing",
             targets: ["PathParsing"]
         ),
+        .executable(
+            name: "pathtest",
+            targets: ["PathTest"]
+        ),
     ],
     dependencies: [
         .leviouwendijk.IO,
         .leviouwendijk.FileTypes,
+        .leviouwendijk.Primitives,
         .leviouwendijk.Methods,
         .leviouwendijk.ProtocolComponents,
         .leviouwendijk.Parsing,
@@ -36,6 +41,7 @@ let package = Package(
                 .leviouwendijk.IO,
                 .leviouwendijk.Position,
                 .leviouwendijk.FileTypes,
+                .leviouwendijk.Primitives,
             ]
         ),
         .target(
@@ -51,6 +57,13 @@ let package = Package(
             dependencies: [
                 "Path",
                 .leviouwendijk.Parsing,
+            ]
+        ),
+        .executableTarget(
+            name: "PathTest",
+            dependencies: [
+                "Path",
+                .leviouwendijk.Primitives,
             ]
         ),
     ]
