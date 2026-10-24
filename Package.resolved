@@ -1,31 +1,13 @@
 {
-  "originHash" : "65a8359e6009aca9d3b30edf32fafc397d47c07109ab2c3f9228f593ca7c96ed",
+  "originHash" : "0091eb5900a58a1446daefe97197266f33b0d288eced82015c2d26e5acb0df0f",
   "pins" : [
     {
-      "identity" : "ansi",
+      "identity" : "atomos",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/leviouwendijk/ANSI.git",
+      "location" : "https://github.com/leviouwendijk/Atomos.git",
       "state" : {
         "branch" : "master",
-        "revision" : "073d9ca7870b688a312608acf14eae6ba052c0d6"
-      }
-    },
-    {
-      "identity" : "arguments",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/leviouwendijk/Arguments.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "d4ea1ad418c54380fde04cefacf5d59fa90054ba"
-      }
-    },
-    {
-      "identity" : "clipboard",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/leviouwendijk/Clipboard",
-      "state" : {
-        "branch" : "master",
-        "revision" : "01f5f9aa53fe3dd2cb3e227117e4a850e4be05c6"
+        "revision" : "5ffdb160c4913e02214020eb75ac620900cf2914"
       }
     },
     {
@@ -34,16 +16,7 @@
       "location" : "https://github.com/leviouwendijk/Difference.git",
       "state" : {
         "branch" : "master",
-        "revision" : "1938bd3531e7d4c9476b67d10d052375f24c41e3"
-      }
-    },
-    {
-      "identity" : "dsl",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/leviouwendijk/DSL",
-      "state" : {
-        "branch" : "master",
-        "revision" : "30ec6798f883b91f697d060bb001e0e4f7a09225"
+        "revision" : "ba8ed9686b398007439c9069c9ba24b6daaf6ae1"
       }
     },
     {
@@ -70,7 +43,7 @@
       "location" : "https://github.com/leviouwendijk/IO.git",
       "state" : {
         "branch" : "master",
-        "revision" : "024393599fed6729b956293e7b4219d96ea90b05"
+        "revision" : "5e88720439dc8f782034b6f9f8374c61ef1707f0"
       }
     },
     {
@@ -88,7 +61,7 @@
       "location" : "https://github.com/leviouwendijk/Parsing.git",
       "state" : {
         "branch" : "master",
-        "revision" : "b415cec83b0499158df5d0faeb760a2d4943d236"
+        "revision" : "e08c491045a72bdde184cfd826dc2af0fcbe7f30"
       }
     },
     {
@@ -97,7 +70,7 @@
       "location" : "https://github.com/leviouwendijk/Position.git",
       "state" : {
         "branch" : "master",
-        "revision" : "491376735af3ef7417b989e38c508577fb72637a"
+        "revision" : "f4b2a54d00898e52111ac452b851cb00cf9538aa"
       }
     },
     {
@@ -106,7 +79,7 @@
       "location" : "https://github.com/leviouwendijk/Primitives.git",
       "state" : {
         "branch" : "master",
-        "revision" : "00079f74ba0b5a40598c1f8a7bb536306ec6c04e"
+        "revision" : "d9a6c6822a3bd030979451f31835db3f3cd67fa2"
       }
     },
     {
@@ -119,30 +92,21 @@
       }
     },
     {
-      "identity" : "strings",
+      "identity" : "schema",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/leviouwendijk/Strings",
+      "location" : "https://github.com/leviouwendijk/Schema.git",
       "state" : {
         "branch" : "master",
-        "revision" : "86a939d7bbb3e25808f88fbcedcee4069a5a5ae1"
+        "revision" : "b880c7b0854d636fd0e14e6d5d19c6de5d1a5c59"
       }
     },
     {
-      "identity" : "terminal",
+      "identity" : "testing",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/leviouwendijk/Terminal.git",
+      "location" : "https://github.com/leviouwendijk/Testing.git",
       "state" : {
         "branch" : "master",
-        "revision" : "269258eea726dc92d563f84cf0e53879c22e5e50"
-      }
-    },
-    {
-      "identity" : "testflows",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/leviouwendijk/TestFlows.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "7d56906b4eb334be0ce3c43436772599260e6d1f"
+        "revision" : "105eecb68c3db99119dff3afeb846b7923abbc85"
       }
     }
   ],

@@ -1277,6 +1277,7 @@ func run_path_tests() throws {
     try test_path_tree_direct_insertion()
     try test_path_tree_direct_move_rename()
     try test_path_tree_tree_rendering()
+    try test_path_tree_difference_semantics()
     try test_path_walker()
 }
 

@@ -33,6 +33,7 @@ let package = Package(
         .leviouwendijk.ProtocolComponents,
         .leviouwendijk.Parsing,
         .leviouwendijk.Position,
+        .leviouwendijk.Difference,
     ],
     targets: [
         .target(
@@ -42,6 +43,7 @@ let package = Package(
                 .leviouwendijk.Position,
                 .leviouwendijk.FileTypes,
                 .leviouwendijk.Primitives,
+                .leviouwendijk.Difference,
             ]
         ),
         .target(
@@ -65,6 +67,7 @@ let package = Package(
                 "Path",
                 .leviouwendijk.IO,
                 .leviouwendijk.Primitives,
+                .leviouwendijk.Difference,
             ]
         ),
     ]
@@ -256,6 +259,7 @@ struct LeviOuwendijkCatalog {
     let Cryptography = DependencyCatalog.Ref("Cryptography")
 
     let Primitives = DependencyCatalog.Ref("Primitives")
+    let Difference = DependencyCatalog.Ref("Difference")
     let Methods = DependencyCatalog.Ref("Methods")
     let Variables = DependencyCatalog.Ref("Variables")
     let Writers = DependencyCatalog.Ref("Writers")
