@@ -1271,6 +1271,7 @@ func test_path_walker() throws {
 }
 
 func run_path_tests() throws {
+    try test_path_layout()
     try test_standard_path()
     try test_path_tree()
     try test_path_tree_primitives_projection()
