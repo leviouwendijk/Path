@@ -929,6 +929,50 @@ func test_path_tree_tree_rendering() throws {
         """,
         "PathTreeNode compatibility rendering remains available"
     )
+
+    var scanned = PathTree(
+        root: StandardPath(
+            rawPath: "Project"
+        )
+    )
+    try scanned.appendPath(rawPath: "Sources", type: .directory)
+    try scanned.appendPath(rawPath: "Sources/Core", type: .directory)
+    try scanned.appendPath(rawPath: "Sources/Core/a.swift", type: .file)
+    try scanned.appendPath(rawPath: "Sources/b.swift", type: .file)
+    try scanned.appendPath(rawPath: "Empty", type: .directory)
+    try scanned.appendPath(rawPath: "README.md", type: .file)
+
+    try expect(
+        scanned.render(
+            .init(
+                indentation: "  ",
+                includeRoot: false,
+                collapseDepth: 0
+            )
+        ) == """
+        Sources/ (1 dir, 2 files)
+        Empty/
+        README.md
+        """,
+        "Collapsed directories show their contents as counts"
+    )
+
+    try expect(
+        scanned.render(
+            .init(
+                indentation: "  ",
+                includeRoot: false,
+                collapseDepth: 1
+            )
+        ) == """
+        Sources/
+          Core/ (0 dirs, 1 file)
+          b.swift
+        Empty/
+        README.md
+        """,
+        "Collapse depth keeps the levels above it listed"
+    )
 }
 
 func test_path_walker() throws {
