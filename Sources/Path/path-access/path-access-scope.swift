@@ -224,20 +224,9 @@ public extension PathAccessScope {
         _ url: URL,
         type explicitType: PathSegmentType? = nil
     ) throws -> DescendantPath {
-        let existence = PathExistence.check(
-            url: url
-        )
-        let type = explicitType ?? existence.type
-        let path = StandardPath(
-            fileURL: url,
-            terminalHint: terminalHint(
-                for: type
-            ),
-            inferFileType: type == .file
-        )
-        let descendant = try DescendantPath(
-            path,
-            from: root
+        let (descendant, type) = try locate(
+            url,
+            type: explicitType
         )
 
         return try requireAccessible(
@@ -321,6 +310,32 @@ public extension PathAccessScope {
 }
 
 extension PathAccessScope {
+    /// `url` under this root, with its type; containment only, no policy.
+    func locate(
+        _ url: URL,
+        type explicitType: PathSegmentType? = nil
+    ) throws -> (DescendantPath, PathSegmentType?) {
+        let existence = PathExistence.check(
+            url: url
+        )
+        let type = explicitType ?? existence.type
+        let path = StandardPath(
+            fileURL: url,
+            terminalHint: terminalHint(
+                for: type
+            ),
+            inferFileType: type == .file
+        )
+
+        return (
+            try DescendantPath(
+                path,
+                from: root
+            ),
+            type
+        )
+    }
+
     func absoluteURLUnchecked(
         for path: DescendantPath,
         type: PathSegmentType? = nil

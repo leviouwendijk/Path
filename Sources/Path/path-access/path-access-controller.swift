@@ -364,11 +364,17 @@ public extension PathAccessController {
         let root = try root(
             identifier: rootIdentifier
         )
-
-        return try root.scope.scope(
+        let (descendant, type) = try root.scope.locate(
             url,
             type: type
         )
+        _ = try governed(
+            descendant,
+            requested: root,
+            type: type
+        )
+
+        return descendant
     }
 
     func absoluteURL(
@@ -406,18 +412,11 @@ public extension PathAccessController {
         rootIdentifier: PathAccessRootIdentifier? = nil,
         type: PathSegmentType? = nil
     ) throws -> AuthorizedPath {
-        let (root, descendant) = try governing(
+        let (root, accessible, evaluation) = try governed(
             descendant,
             requested: root(
                 identifier: rootIdentifier
-            )
-        )
-        let accessible = try root.scope.requireAccessible(
-            descendant,
-            type: type
-        )
-        let evaluation = root.scope.evaluate(
-            accessible,
+            ),
             type: type
         )
         let absoluteURL = try root.scope.absoluteURL(
@@ -485,6 +484,56 @@ public extension PathAccessController {
                 rawPath: rawPath,
                 filetype: filetype,
                 resolved: descendant
+            )
+        )
+    }
+
+    /// Checks `descendant` against the root that governs it, and against
+    /// the explicit deny rules of every other root that contains it: an
+    /// outer root's deny rule also holds inside a nested root.
+    func governed(
+        _ descendant: DescendantPath,
+        requested: PathAccessRoot,
+        type: PathSegmentType?
+    ) throws -> (PathAccessRoot, DescendantPath, PathAccessEvaluation) {
+        let (root, path) = governing(
+            descendant,
+            requested: requested
+        )
+        let accessible = try root.scope.requireAccessible(
+            path,
+            type: type
+        )
+
+        for container in roots.values.sorted(by: { $0.id.rawValue < $1.id.rawValue })
+        where container.id != root.id {
+            guard let contained = try? DescendantPath(
+                path.absolute,
+                from: container.scope.root
+            ) else {
+                continue
+            }
+
+            let evaluation = container.scope.evaluate(
+                contained,
+                type: type
+            )
+
+            if evaluation.isDenied,
+               evaluation.matchedRule != nil
+            {
+                throw PathAccessError.denied(
+                    evaluation
+                )
+            }
+        }
+
+        return (
+            root,
+            accessible,
+            root.scope.evaluate(
+                accessible,
+                type: type
             )
         )
     }
