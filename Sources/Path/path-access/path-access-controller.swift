@@ -406,8 +406,11 @@ public extension PathAccessController {
         rootIdentifier: PathAccessRootIdentifier? = nil,
         type: PathSegmentType? = nil
     ) throws -> AuthorizedPath {
-        let root = try root(
-            identifier: rootIdentifier
+        let (root, descendant) = try governing(
+            descendant,
+            requested: root(
+                identifier: rootIdentifier
+            )
         )
         let accessible = try root.scope.requireAccessible(
             descendant,
@@ -446,15 +449,18 @@ public extension PathAccessController {
         let root = try root(
             identifier: rootIdentifier
         )
-        let descendant = try root.scope.resolve(
-            path,
-            type: type
+        // Only containment here: the policy that applies is the governing
+        // root's, checked once that root is known.
+        let descendant = try root.scope.sandbox.sandbox(
+            path
         )
 
         return try authorize(
             descendant,
             rootIdentifier: root.id,
-            type: type
+            type: type ?? root.scope.inferredType(
+                for: path
+            )
         )
     }
 
@@ -467,17 +473,51 @@ public extension PathAccessController {
         let root = try root(
             identifier: rootIdentifier
         )
-        let descendant = try root.scope.resolve(
+        let descendant = try root.scope.sandbox.sandbox(
             rawPath: rawPath,
-            filetype: filetype,
-            type: type
+            filetype: filetype
         )
 
         return try authorize(
             descendant,
             rootIdentifier: root.id,
-            type: type
+            type: type ?? root.scope.hintedType(
+                rawPath: rawPath,
+                filetype: filetype,
+                resolved: descendant
+            )
         )
+    }
+
+    /// The installed root that governs `descendant`: the innermost one that
+    /// contains it, whichever root named the path. A root nested inside
+    /// another carves its subtree out, so one location never has two
+    /// policies or grants. Equally specific roots keep the requested one.
+    func governing(
+        _ descendant: DescendantPath,
+        requested: PathAccessRoot
+    ) -> (PathAccessRoot, DescendantPath) {
+        var governing = (requested, descendant)
+        var depth = requested.scope.root.segments.count
+
+        for candidate in roots.values.sorted(by: { $0.id.rawValue < $1.id.rawValue })
+        where candidate.id != requested.id {
+            let candidateDepth = candidate.scope.root.segments.count
+
+            guard candidateDepth > depth,
+                  let nested = try? DescendantPath(
+                      descendant.absolute,
+                      from: candidate.scope.root
+                  )
+            else {
+                continue
+            }
+
+            governing = (candidate, nested)
+            depth = candidateDepth
+        }
+
+        return governing
     }
 }
 

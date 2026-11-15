@@ -320,7 +320,7 @@ public extension PathAccessScope {
 
 }
 
-private extension PathAccessScope {
+extension PathAccessScope {
     func absoluteURLUnchecked(
         for path: DescendantPath,
         type: PathSegmentType? = nil
