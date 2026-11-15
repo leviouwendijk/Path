@@ -35,6 +35,20 @@ public struct AuthorizedPath: Sendable, Codable, Hashable {
 }
 
 public extension AuthorizedPath {
+    /// The same authorization, shown as `presentation`.
+    func presenting(
+        _ presentation: String
+    ) -> AuthorizedPath {
+        .init(
+            root: rootIdentifier,
+            path: path,
+            url: absoluteURL,
+            presentation: presentation,
+            evaluation: evaluation,
+            checks: policyChecks
+        )
+    }
+
     var qualifiedPresentationPath: String {
         presentingQualified()
     }
