@@ -1,13 +1,17 @@
 import Foundation
 import FileTypes
+import IO
 
 public struct PathAccessController: Sendable, Codable, Hashable {
     public var roots: [PathAccessRootIdentifier: PathAccessRoot]
     public var defaultRootIdentifier: PathAccessRootIdentifier?
+    /// Which symlinks an authorized path may pass through.
+    public var symlinks: PathSymlinkPolicy
 
     public init(
         roots: [PathAccessRoot] = [],
-        defaultRootIdentifier: PathAccessRootIdentifier? = nil
+        defaultRootIdentifier: PathAccessRootIdentifier? = nil,
+        symlinks: PathSymlinkPolicy = .roots
     ) {
         var mappedRoots: [PathAccessRootIdentifier: PathAccessRoot] = [:]
 
@@ -39,15 +43,18 @@ public struct PathAccessController: Sendable, Codable, Hashable {
 
         self.roots = mappedRoots
         self.defaultRootIdentifier = resolvedDefaultIdentifier
+        self.symlinks = symlinks
     }
 
     public init(
         roots: [PathAccessRootIdentifier: PathAccessRoot],
-        defaultRootIdentifier: PathAccessRootIdentifier? = nil
+        defaultRootIdentifier: PathAccessRootIdentifier? = nil,
+        symlinks: PathSymlinkPolicy = .roots
     ) {
         self.init(
             roots: Array(roots.values),
-            defaultRootIdentifier: defaultRootIdentifier
+            defaultRootIdentifier: defaultRootIdentifier,
+            symlinks: symlinks
         )
     }
 }
@@ -412,13 +419,14 @@ public extension PathAccessController {
         rootIdentifier: PathAccessRootIdentifier? = nil,
         type: PathSegmentType? = nil
     ) throws -> AuthorizedPath {
-        let (root, accessible, evaluation) = try governed(
+        let (governed, followed) = try governedFollowing(
             descendant,
             requested: root(
                 identifier: rootIdentifier
             ),
             type: type
         )
+        let (root, accessible, evaluation) = governed
         let absoluteURL = try root.scope.absoluteURL(
             for: accessible,
             type: type
@@ -436,7 +444,8 @@ public extension PathAccessController {
                 "root_resolved",
                 "path_sandboxed",
                 "path_policy_allowed"
-            ]
+            ] + (symlinks == .anywhere ? [] : ["path_symlinks_checked"]),
+            followed: followed
         )
     }
 
@@ -490,8 +499,157 @@ public extension PathAccessController {
 
     /// Checks `descendant` against the root that governs it, and against
     /// the explicit deny rules of every other root that contains it: an
-    /// outer root's deny rule also holds inside a nested root.
+    /// outer root's deny rule also holds inside a nested root. Then the
+    /// symlinks it passes through, per `symlinks`.
     func governed(
+        _ descendant: DescendantPath,
+        requested: PathAccessRoot,
+        type: PathSegmentType?
+    ) throws -> (PathAccessRoot, DescendantPath, PathAccessEvaluation) {
+        try governedFollowing(
+            descendant,
+            requested: requested,
+            type: type
+        ).governed
+    }
+
+    func governedFollowing(
+        _ descendant: DescendantPath,
+        requested: PathAccessRoot,
+        type: PathSegmentType?
+    ) throws -> (
+        governed: (PathAccessRoot, DescendantPath, PathAccessEvaluation),
+        followed: [AuthorizedPath.Destination]
+    ) {
+        let governed = try governedLexically(
+            descendant,
+            requested: requested,
+            type: type
+        )
+
+        let followed = try requireSymlinks(
+            governed.1,
+            in: governed.0,
+            type: type
+        )
+
+        return (governed, followed)
+    }
+
+    /// Under `.roots`, each link's destination (plus the rest of the path)
+    /// is governed as if named directly, until a path with no link below its
+    /// root remains. The authorized path stays the one named: operations act
+    /// on it, and on a link itself where they do not follow it.
+    ///
+    /// Cost: nothing under `.anywhere`; one `fstatat` on Darwin when the path
+    /// has no link. A link swapped in after this check is not caught.
+    @discardableResult
+    func requireSymlinks(
+        _ descendant: DescendantPath,
+        in root: PathAccessRoot,
+        type: PathSegmentType?
+    ) throws -> [AuthorizedPath.Destination] {
+        guard symlinks != .anywhere else {
+            return []
+        }
+
+        var root = root
+        var path = descendant
+        var followed: [AuthorizedPath.Destination] = []
+
+        for _ in 0..<Self.symlinkLimit {
+            let url = root.scope.absoluteURLUnchecked(
+                for: path,
+                type: type
+            )
+
+            guard let link = try FileSystem.default.firstSymlink(
+                in: url,
+                below: root.rootURL
+            ) else {
+                return followed
+            }
+
+            guard symlinks == .roots else {
+                throw PathSandboxError.symlinkNotFollowed(
+                    path: descendant.absolute,
+                    link: link.url.path
+                )
+            }
+
+            let rest = String(
+                url.path.dropFirst(
+                    link.url.path.count
+                )
+            )
+            let destination = FileSystem.default.resolve(
+                URL(
+                    fileURLWithPath: link.destination.path + rest
+                ).standardizedFileURL
+            )
+
+            guard let next = located(
+                destination,
+                type: type
+            ) else {
+                throw PathSandboxError.symlinkEscapesRoots(
+                    path: descendant.absolute,
+                    link: link.url.path,
+                    destination: destination.path
+                )
+            }
+
+            let governed = try governedLexically(
+                next.1,
+                requested: next.0,
+                type: type
+            )
+            root = governed.0
+            path = governed.1
+            followed.append(
+                .init(
+                    rootIdentifier: root.id,
+                    path: path
+                )
+            )
+        }
+
+        throw PathSandboxError.symlinkLoop(
+            path: descendant.absolute
+        )
+    }
+
+    private static var symlinkLimit: Int {
+        40
+    }
+
+    /// The first installed root (by identifier) containing `url`; governing
+    /// picks the innermost.
+    private func located(
+        _ url: URL,
+        type: PathSegmentType?
+    ) -> (PathAccessRoot, DescendantPath)? {
+        for root in roots.values.sorted(by: { $0.id.rawValue < $1.id.rawValue }) {
+            let path = StandardPath(
+                fileURL: url,
+                terminalHint: root.scope.terminalHint(
+                    for: type
+                ),
+                inferFileType: type == .file
+            )
+
+            if let descendant = try? DescendantPath(
+                path,
+                from: root.scope.root
+            ) {
+                return (root, descendant)
+            }
+        }
+
+        return nil
+    }
+
+    private func governedLexically(
         _ descendant: DescendantPath,
         requested: PathAccessRoot,
         type: PathSegmentType?
@@ -615,11 +773,22 @@ public extension PathAccessController {
                 return nil
             }
 
-            return try authorize(
-                descendant,
-                rootIdentifier: root.id,
-                type: match.type
-            )
+            // A link the symlink policy refuses is left out, not an error
+            // for the whole result.
+            do {
+                return try authorize(
+                    descendant,
+                    rootIdentifier: root.id,
+                    type: match.type
+                )
+            } catch let error as PathSandboxError {
+                switch error {
+                case .symlinkNotFollowed, .symlinkEscapesRoots, .symlinkLoop:
+                    return nil
+                case .rootMustBeDirectory, .pathEscapesSandbox:
+                    throw error
+                }
+            }
         }
     }
 }
@@ -671,7 +840,8 @@ private extension PathAccessController {
     func normalized() -> Self {
         .init(
             roots: Array(roots.values),
-            defaultRootIdentifier: defaultRootIdentifier
+            defaultRootIdentifier: defaultRootIdentifier,
+            symlinks: symlinks
         )
     }
 
