@@ -10,32 +10,14 @@ public enum PathAncestorSearch {
     ) -> [URL] {
         var out: [URL] = []
 
-        var current = normalizedStart(
-            start,
-            treatingAsDirectory: treatingStartAsDirectory
-        )
-
-        if !includingStart {
-            current = current.deletingLastPathComponent()
-        }
-
-        var depth = 0
-
-        while true {
-            out.append(current)
-
-            if let maxDepth, depth >= maxDepth {
-                break
-            }
-
-            let parent = current.deletingLastPathComponent()
-
-            if parent.path == current.path {
-                break
-            }
-
-            current = parent
-            depth += 1
+        walk(
+            startingAt: start,
+            treatingStartAsDirectory: treatingStartAsDirectory,
+            includingStart: includingStart,
+            maxDepth: maxDepth
+        ) { candidate in
+            out.append(candidate)
+            return false
         }
 
         return out
@@ -48,18 +30,23 @@ public enum PathAncestorSearch {
         maxDepth: Int? = nil,
         where predicate: (URL) throws -> Bool
     ) rethrows -> URL? {
-        for candidate in ancestors(
+        var found: URL?
+
+        try walk(
             startingAt: start,
             treatingStartAsDirectory: treatingStartAsDirectory,
             includingStart: includingStart,
             maxDepth: maxDepth
-        ) {
-            if try predicate(candidate) {
-                return candidate
+        ) { candidate in
+            guard try predicate(candidate) else {
+                return false
             }
+
+            found = candidate
+            return true
         }
 
-        return nil
+        return found
     }
 
     public static func collectUpwards<T>(
@@ -114,6 +101,47 @@ public enum PathAncestorSearch {
             }
 
             return false
+        }
+    }
+
+    /// Visits the start and each parent up to the filesystem root, until `visit` returns true.
+    /// The parent of `/` is standardized back to `/`, which ends the walk: a raw
+    /// `deletingLastPathComponent()` would keep producing `/..`, `/../..`, … forever.
+    private static func walk(
+        startingAt start: URL,
+        treatingStartAsDirectory: Bool,
+        includingStart: Bool,
+        maxDepth: Int?,
+        visit: (URL) throws -> Bool
+    ) rethrows {
+        var current = normalizedStart(
+            start,
+            treatingAsDirectory: treatingStartAsDirectory
+        )
+
+        if !includingStart {
+            current = current.deletingLastPathComponent().standardizedFileURL
+        }
+
+        var depth = 0
+
+        while true {
+            if try visit(current) {
+                return
+            }
+
+            if let maxDepth, depth >= maxDepth {
+                return
+            }
+
+            let parent = current.deletingLastPathComponent().standardizedFileURL
+
+            if parent.path == current.path {
+                return
+            }
+
+            current = parent
+            depth += 1
         }
     }
 

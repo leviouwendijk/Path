@@ -1314,6 +1314,31 @@ func test_path_walker() throws {
     )
 }
 
+func test_ancestor_search_stops_at_root() throws {
+    // Reached by stripping components, the parent of "/" is "/.." unless standardized.
+    let start = FileManager.default.temporaryDirectory
+        .appendingPathComponent("PathTest-ancestors-\(UUID().uuidString)", isDirectory: true)
+        .appendingPathComponent("nested", isDirectory: true)
+
+    let ancestors = PathAncestorSearch.ancestors(startingAt: start)
+
+    try expect(
+        ancestors.last?.path == "/",
+        "the ancestor walk ends at the filesystem root"
+    )
+    try expect(
+        !ancestors.contains { $0.path.contains("..") },
+        "the ancestor walk never climbs above the root"
+    )
+    try expect(
+        PathAncestorSearch.nearestAncestorContainingAny(
+            ["path-test-\(UUID().uuidString)"],
+            startingAt: start
+        ) == nil,
+        "a search without a match ends at the root instead of looping"
+    )
+}
+
 func run_path_tests() throws {
     try test_path_layout()
     try test_standard_path()
@@ -1324,6 +1349,7 @@ func run_path_tests() throws {
     try test_path_tree_tree_rendering()
     try test_path_tree_difference_semantics()
     try test_path_walker()
+    try test_ancestor_search_stops_at_root()
 }
 
 do {
