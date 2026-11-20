@@ -20,10 +20,6 @@ let package = Package(
             name: "PathParsing",
             targets: ["PathParsing"]
         ),
-        .executable(
-            name: "pathtest",
-            targets: ["PathTest"]
-        ),
     ],
     dependencies: [
         .leviouwendijk.IO,
@@ -59,15 +55,6 @@ let package = Package(
             dependencies: [
                 "Path",
                 .leviouwendijk.Parsing,
-            ]
-        ),
-        .executableTarget(
-            name: "PathTest",
-            dependencies: [
-                "Path",
-                .leviouwendijk.IO,
-                .leviouwendijk.Primitives,
-                .leviouwendijk.Difference,
             ]
         ),
     ]
