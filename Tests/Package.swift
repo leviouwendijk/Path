@@ -15,12 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .leviouwendijk.IO,
-        .leviouwendijk.FileTypes,
         .leviouwendijk.Primitives,
-        .leviouwendijk.Methods,
-        .leviouwendijk.ProtocolComponents,
-        .leviouwendijk.Parsing,
-        .leviouwendijk.Position,
         .leviouwendijk.Difference,
         .package(path: ".."),
     ],
