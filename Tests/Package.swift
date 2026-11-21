@@ -9,7 +9,7 @@ let package = Package(
     ],
     products: [
         .executable(
-            name: "pathtest",
+            name: "t_path",
             targets: ["PathTest"]
         ),
     ],
@@ -17,6 +17,7 @@ let package = Package(
         .leviouwendijk.IO,
         .leviouwendijk.Primitives,
         .leviouwendijk.Difference,
+        .leviouwendijk.Errors,
         .package(path: ".."),
     ],
     targets: [
@@ -27,6 +28,7 @@ let package = Package(
                 .leviouwendijk.IO,
                 .leviouwendijk.Primitives,
                 .leviouwendijk.Difference,
+                .leviouwendijk.Errors,
             ]
         ),
     ]
@@ -211,6 +213,7 @@ enum Catalogs {
 
 struct LeviOuwendijkCatalog {
     let IO = DependencyCatalog.Ref("IO")
+    let Errors = DependencyCatalog.Ref("Errors")
     let HTTP = DependencyCatalog.Ref("HTTP")
     let Server = DependencyCatalog.Ref("Server")
     let Milieu = DependencyCatalog.Ref("Milieu")

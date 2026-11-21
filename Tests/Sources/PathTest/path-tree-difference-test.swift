@@ -1,5 +1,5 @@
 import Difference
-import Path
+@_spi(Testing) import Path
 
 func test_path_tree_difference_semantics() throws {
     let baseline = PathTree(root: StandardPath(rawPath: "sandbox"), children: [

@@ -1,5 +1,5 @@
 import Foundation
-import Path
+@_spi(Testing) import Path
 
 func test_path_layout() throws {
     let year = PathField<Int>("year")

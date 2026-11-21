@@ -30,6 +30,7 @@ let package = Package(
         .leviouwendijk.Parsing,
         .leviouwendijk.Position,
         .leviouwendijk.Difference,
+        .leviouwendijk.Errors,
     ],
     targets: [
         .target(
@@ -40,12 +41,14 @@ let package = Package(
                 .leviouwendijk.FileTypes,
                 .leviouwendijk.Primitives,
                 .leviouwendijk.Difference,
+                .leviouwendijk.Errors,
             ]
         ),
         .target(
             name: "PathWeb",
             dependencies: [
                 "Path",
+                .leviouwendijk.Errors,
                 .leviouwendijk.Methods,
                 .leviouwendijk.ProtocolComponents,
             ]
@@ -54,6 +57,7 @@ let package = Package(
             name: "PathParsing",
             dependencies: [
                 "Path",
+                .leviouwendijk.Errors,
                 .leviouwendijk.Parsing,
             ]
         ),
@@ -246,6 +250,7 @@ struct LeviOuwendijkCatalog {
     let Cryptography = DependencyCatalog.Ref("Cryptography")
 
     let Primitives = DependencyCatalog.Ref("Primitives")
+    let Errors = DependencyCatalog.Ref("Errors")
     let Difference = DependencyCatalog.Ref("Difference")
     let Methods = DependencyCatalog.Ref("Methods")
     let Variables = DependencyCatalog.Ref("Variables")

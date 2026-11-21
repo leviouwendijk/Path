@@ -1,16 +1,16 @@
 import FileTypes
 import Primitives
 
-package struct PathTreeValue:
+@_spi(Testing) public struct PathTreeValue:
     Sendable,
     Codable,
     Equatable,
     Hashable
 {
-    package var segment: PathSegment
-    package var filetype: AnyFileType?
+    @_spi(Testing) public var segment: PathSegment
+    @_spi(Testing) public var filetype: AnyFileType?
 
-    package init(
+    @_spi(Testing) public init(
         segment: PathSegment,
         filetype: AnyFileType? = nil
     ) {
@@ -19,7 +19,7 @@ package struct PathTreeValue:
     }
 }
 
-package extension PathTreeValue {
+@_spi(Testing) public extension PathTreeValue {
     var type: PathSegmentType {
         segment.type
             ?? .directory
@@ -55,7 +55,7 @@ package extension PathTreeValue {
     }
 }
 
-package extension PathTree {
+@_spi(Testing) public extension PathTree {
     var primitive_tree: Tree<PathTreeValue> {
         structure
     }

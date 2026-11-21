@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 import IO
-import Path
+@_spi(Testing) import Path
 import Primitives
 
 enum PathTestError: Error {
@@ -1350,17 +1350,18 @@ func run_path_tests() throws {
     try test_path_tree_difference_semantics()
     try test_path_walker()
     try test_ancestor_search_stops_at_root()
+    try test_path_error_semantics()
 }
 
 do {
     try run_path_tests()
 
     print(
-        "pathtest: passed"
+        "t_path: passed"
     )
 } catch {
     print(
-        "pathtest: failed: \(error)"
+        "t_path: failed: \(error)"
     )
 
     exit(
