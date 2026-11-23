@@ -1351,6 +1351,7 @@ func run_path_tests() throws {
     try test_path_walker()
     try test_ancestor_search_stops_at_root()
     try test_path_error_semantics()
+    try test_path_access_scan_withholds_denied()
 }
 
 do {

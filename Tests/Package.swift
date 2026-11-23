@@ -25,6 +25,7 @@ let package = Package(
             name: "PathTest",
             dependencies: [
                 .product(name: "Path", package: "Path"),
+                .product(name: "PathParsing", package: "Path"),
                 .leviouwendijk.IO,
                 .leviouwendijk.Primitives,
                 .leviouwendijk.Difference,
