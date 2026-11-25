@@ -22,43 +22,43 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .leviouwendijk.IO,
-        .leviouwendijk.FileTypes,
-        .leviouwendijk.Primitives,
-        .leviouwendijk.Methods,
-        .leviouwendijk.ProtocolComponents,
-        .leviouwendijk.Parsing,
-        .leviouwendijk.Position,
-        .leviouwendijk.Difference,
-        .leviouwendijk.Errors,
+        .swift_lco.IO,
+        .swift_lco.FileTypes,
+        .swift_lco.Primitives,
+        .swift_lco.Methods,
+        .swift_webc.ProtocolComponents,
+        .swift_langs.Parsing,
+        .swift_lco.Position,
+        .swift_lco.Difference,
+        .swift_lco.Errors,
     ],
     targets: [
         .target(
             name: "Path",
             dependencies: [
-                .leviouwendijk.IO,
-                .leviouwendijk.Position,
-                .leviouwendijk.FileTypes,
-                .leviouwendijk.Primitives,
-                .leviouwendijk.Difference,
-                .leviouwendijk.Errors,
+                .swift_lco.IO,
+                .swift_lco.Position,
+                .swift_lco.FileTypes,
+                .swift_lco.Primitives,
+                .swift_lco.Difference,
+                .swift_lco.Errors,
             ]
         ),
         .target(
             name: "PathWeb",
             dependencies: [
                 "Path",
-                .leviouwendijk.Errors,
-                .leviouwendijk.Methods,
-                .leviouwendijk.ProtocolComponents,
+                .swift_lco.Errors,
+                .swift_lco.Methods,
+                .swift_webc.ProtocolComponents,
             ]
         ),
         .target(
             name: "PathParsing",
             dependencies: [
                 "Path",
-                .leviouwendijk.Errors,
-                .leviouwendijk.Parsing,
+                .swift_lco.Errors,
+                .swift_langs.Parsing,
             ]
         ),
     ]
@@ -238,59 +238,71 @@ enum DependencyCatalog {
 }
 
 enum Catalogs {
-    static let leviouwendijk = LeviOuwendijkCatalog()
+    static let swift_lco = SwiftLcoCatalog()
+    static let swift_langs = SwiftLangsCatalog()
+    static let swift_webc = SwiftWebcCatalog()
 }
 
-struct LeviOuwendijkCatalog {
+struct SwiftLcoCatalog {
     let IO = DependencyCatalog.Ref("IO")
-    let HTTP = DependencyCatalog.Ref("HTTP")
-    let Server = DependencyCatalog.Ref("Server")
-    let Milieu = DependencyCatalog.Ref("Milieu")
-    let Loggers = DependencyCatalog.Ref("Loggers")
-    let Cryptography = DependencyCatalog.Ref("Cryptography")
-
-    let Primitives = DependencyCatalog.Ref("Primitives")
-    let Errors = DependencyCatalog.Ref("Errors")
-    let Difference = DependencyCatalog.Ref("Difference")
-    let Methods = DependencyCatalog.Ref("Methods")
-    let Variables = DependencyCatalog.Ref("Variables")
-    let Writers = DependencyCatalog.Ref("Writers")
-    let ProtocolComponents = DependencyCatalog.Ref("ProtocolComponents")
-    let Parsing = DependencyCatalog.Ref("Parsing")
-    let Position = DependencyCatalog.Ref("Position")
     let FileTypes = DependencyCatalog.Ref("FileTypes")
+    let Primitives = DependencyCatalog.Ref("Primitives")
+    let Methods = DependencyCatalog.Ref("Methods")
+    let Position = DependencyCatalog.Ref("Position")
+    let Difference = DependencyCatalog.Ref("Difference")
+    let Errors = DependencyCatalog.Ref("Errors")
+}
 
-    let plate = DependencyCatalog.Ref("plate")
-    let Structures = DependencyCatalog.Ref("Structures")
-    let Extensions = DependencyCatalog.Ref("Extensions")
-    let Interfaces = DependencyCatalog.Ref("Interfaces")
-    let Parsers = DependencyCatalog.Ref("Parsers")
-    let Constructors = DependencyCatalog.Ref("Constructors")
+struct SwiftLangsCatalog {
+    let Parsing = DependencyCatalog.Ref("Parsing")
+}
 
-    let Surfaces = DependencyCatalog.Ref("Surfaces")
-    let Vaporized = DependencyCatalog.Ref("Vaporized")
-
-    // repo != product
-    let PklSwift = DependencyCatalog.Ref(
-        repo: "pkl-swift",
-        product: "PklSwift"
-    )
+struct SwiftWebcCatalog {
+    let ProtocolComponents = DependencyCatalog.Ref("ProtocolComponents")
 }
 
 extension Package.Dependency {
-    static var leviouwendijk: DependencyCatalog.PackageNamespace<LeviOuwendijkCatalog> {
+    static var swift_lco: DependencyCatalog.PackageNamespace<SwiftLcoCatalog> {
         .init(
-            source: .init(owner: "leviouwendijk"),
-            catalog: Catalogs.leviouwendijk
+            source: .init(owner: "swift-lco"),
+            catalog: Catalogs.swift_lco
+        )
+    }
+
+    static var swift_langs: DependencyCatalog.PackageNamespace<SwiftLangsCatalog> {
+        .init(
+            source: .init(owner: "swift-langs"),
+            catalog: Catalogs.swift_langs
+        )
+    }
+
+    static var swift_webc: DependencyCatalog.PackageNamespace<SwiftWebcCatalog> {
+        .init(
+            source: .init(owner: "swift-webc"),
+            catalog: Catalogs.swift_webc
         )
     }
 }
 
 extension Target.Dependency {
-    static var leviouwendijk: DependencyCatalog.ProductNamespace<LeviOuwendijkCatalog> {
+    static var swift_lco: DependencyCatalog.ProductNamespace<SwiftLcoCatalog> {
         .init(
-            source: .init(owner: "leviouwendijk"),
-            catalog: Catalogs.leviouwendijk
+            source: .init(owner: "swift-lco"),
+            catalog: Catalogs.swift_lco
+        )
+    }
+
+    static var swift_langs: DependencyCatalog.ProductNamespace<SwiftLangsCatalog> {
+        .init(
+            source: .init(owner: "swift-langs"),
+            catalog: Catalogs.swift_langs
+        )
+    }
+
+    static var swift_webc: DependencyCatalog.ProductNamespace<SwiftWebcCatalog> {
+        .init(
+            source: .init(owner: "swift-webc"),
+            catalog: Catalogs.swift_webc
         )
     }
 }

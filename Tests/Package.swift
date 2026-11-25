@@ -14,10 +14,10 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .leviouwendijk.IO,
-        .leviouwendijk.Primitives,
-        .leviouwendijk.Difference,
-        .leviouwendijk.Errors,
+        .swift_lco.IO,
+        .swift_lco.Primitives,
+        .swift_lco.Difference,
+        .swift_lco.Errors,
         .package(path: ".."),
     ],
     targets: [
@@ -26,10 +26,10 @@ let package = Package(
             dependencies: [
                 .product(name: "Path", package: "Path"),
                 .product(name: "PathParsing", package: "Path"),
-                .leviouwendijk.IO,
-                .leviouwendijk.Primitives,
-                .leviouwendijk.Difference,
-                .leviouwendijk.Errors,
+                .swift_lco.IO,
+                .swift_lco.Primitives,
+                .swift_lco.Difference,
+                .swift_lco.Errors,
             ]
         ),
     ]
@@ -209,59 +209,30 @@ enum DependencyCatalog {
 }
 
 enum Catalogs {
-    static let leviouwendijk = LeviOuwendijkCatalog()
+    static let swift_lco = SwiftLcoCatalog()
 }
 
-struct LeviOuwendijkCatalog {
+struct SwiftLcoCatalog {
     let IO = DependencyCatalog.Ref("IO")
-    let Errors = DependencyCatalog.Ref("Errors")
-    let HTTP = DependencyCatalog.Ref("HTTP")
-    let Server = DependencyCatalog.Ref("Server")
-    let Milieu = DependencyCatalog.Ref("Milieu")
-    let Loggers = DependencyCatalog.Ref("Loggers")
-    let Cryptography = DependencyCatalog.Ref("Cryptography")
-
     let Primitives = DependencyCatalog.Ref("Primitives")
     let Difference = DependencyCatalog.Ref("Difference")
-    let Methods = DependencyCatalog.Ref("Methods")
-    let Variables = DependencyCatalog.Ref("Variables")
-    let Writers = DependencyCatalog.Ref("Writers")
-    let ProtocolComponents = DependencyCatalog.Ref("ProtocolComponents")
-    let Parsing = DependencyCatalog.Ref("Parsing")
-    let Position = DependencyCatalog.Ref("Position")
-    let FileTypes = DependencyCatalog.Ref("FileTypes")
-
-    let plate = DependencyCatalog.Ref("plate")
-    let Structures = DependencyCatalog.Ref("Structures")
-    let Extensions = DependencyCatalog.Ref("Extensions")
-    let Interfaces = DependencyCatalog.Ref("Interfaces")
-    let Parsers = DependencyCatalog.Ref("Parsers")
-    let Constructors = DependencyCatalog.Ref("Constructors")
-
-    let Surfaces = DependencyCatalog.Ref("Surfaces")
-    let Vaporized = DependencyCatalog.Ref("Vaporized")
-
-    // repo != product
-    let PklSwift = DependencyCatalog.Ref(
-        repo: "pkl-swift",
-        product: "PklSwift"
-    )
+    let Errors = DependencyCatalog.Ref("Errors")
 }
 
 extension Package.Dependency {
-    static var leviouwendijk: DependencyCatalog.PackageNamespace<LeviOuwendijkCatalog> {
+    static var swift_lco: DependencyCatalog.PackageNamespace<SwiftLcoCatalog> {
         .init(
-            source: .init(owner: "leviouwendijk"),
-            catalog: Catalogs.leviouwendijk
+            source: .init(owner: "swift-lco"),
+            catalog: Catalogs.swift_lco
         )
     }
 }
 
 extension Target.Dependency {
-    static var leviouwendijk: DependencyCatalog.ProductNamespace<LeviOuwendijkCatalog> {
+    static var swift_lco: DependencyCatalog.ProductNamespace<SwiftLcoCatalog> {
         .init(
-            source: .init(owner: "leviouwendijk"),
-            catalog: Catalogs.leviouwendijk
+            source: .init(owner: "swift-lco"),
+            catalog: Catalogs.swift_lco
         )
     }
 }
