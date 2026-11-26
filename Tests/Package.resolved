@@ -1,10 +1,10 @@
 {
-  "originHash" : "5d6ab27cfd06df7924e97a0f2c03d66685f9a072e45348ba1460836c3681fe4e",
+  "originHash" : "10f6f164b49551831f0a270ebbef89f35a71b903bb513ce62266a26a479db7aa",
   "pins" : [
     {
       "identity" : "atomos",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-lco/Atomos.git",
+      "location" : "https://github.com/leviouwendijk/Atomos.git",
       "state" : {
         "branch" : "master",
         "revision" : "857fa1b7d1975fe17d52e21c154f92ba5e696be3"
@@ -22,7 +22,7 @@
     {
       "identity" : "dsl",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-dsl/DSL.git",
+      "location" : "https://github.com/leviouwendijk/DSL.git",
       "state" : {
         "branch" : "master",
         "revision" : "14b60217f2e8d6c94e9869ec6f81697aa416c55d"
@@ -40,7 +40,7 @@
     {
       "identity" : "excerpt",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-lco/Excerpt.git",
+      "location" : "https://github.com/leviouwendijk/Excerpt.git",
       "state" : {
         "branch" : "master",
         "revision" : "2ed6f7962c295f4d3b8410951f480a4af0233ca9"
@@ -58,7 +58,7 @@
     {
       "identity" : "grammar",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-langs/Grammar.git",
+      "location" : "https://github.com/leviouwendijk/Grammar.git",
       "state" : {
         "branch" : "master",
         "revision" : "44d68ca80d2ac5cf197bec66746d720136f19866"
@@ -76,7 +76,7 @@
     {
       "identity" : "lexing",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-langs/Lexing.git",
+      "location" : "https://github.com/leviouwendijk/Lexing.git",
       "state" : {
         "branch" : "master",
         "revision" : "8af7b5e20aaf123d2908662c238ac5507c68298c"
@@ -130,7 +130,7 @@
     {
       "identity" : "schema",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-lco/Schema.git",
+      "location" : "https://github.com/leviouwendijk/Schema.git",
       "state" : {
         "branch" : "master",
         "revision" : "e45634af56b8f5ffe8a12a2922675e713dc38190"
@@ -139,7 +139,7 @@
     {
       "identity" : "syntax",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-langs/Syntax.git",
+      "location" : "https://github.com/leviouwendijk/Syntax.git",
       "state" : {
         "branch" : "master",
         "revision" : "89b38e4691c17c2328b8eb6dde5618d144266f73"

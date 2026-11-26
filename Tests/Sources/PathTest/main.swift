@@ -1339,6 +1339,54 @@ func test_ancestor_search_stops_at_root() throws {
     )
 }
 
+/// A configured relative path found from deep inside a tree, within a boundary.
+func test_ancestor_resolving_upwards() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("PathTest-upwards-\(UUID().uuidString)", isDirectory: true)
+        .standardizedFileURL
+    let keys = root.appendingPathComponent("repo/env/keys/app", isDirectory: true)
+    let deep = root.appendingPathComponent("repo/api/swift/app/v1/.build/release", isDirectory: true)
+    let fileManager = FileManager.default
+    try fileManager.createDirectory(at: keys, withIntermediateDirectories: true)
+    try fileManager.createDirectory(at: deep, withIntermediateDirectories: true)
+    try Data("pem".utf8).write(to: keys.appendingPathComponent("key.pem"))
+    defer { try? fileManager.removeItem(at: root) }
+
+    let found = PathAncestorSearch.resolvingUpwards("env/keys/app/key.pem", startingAt: deep)
+    try expect(
+        found?.standardizedFileURL.path == keys.appendingPathComponent("key.pem").path,
+        "the nearest ancestor holding the relative path wins"
+    )
+    try expect(
+        PathAncestorSearch.resolvingUpwards(
+            "env/keys/app/key.pem",
+            startingAt: deep,
+            boundary: root.appendingPathComponent("repo/api")
+        ) == nil,
+        "the walk stops at the boundary"
+    )
+    try expect(
+        PathAncestorSearch.resolvingUpwards(
+            "env/keys/app/key.pem",
+            startingAt: deep,
+            boundary: root
+        ) != nil,
+        "a boundary above the match still finds it"
+    )
+    try expect(
+        PathAncestorSearch.ancestors(
+            startingAt: deep,
+            boundary: root.appendingPathComponent("elsewhere")
+        ).isEmpty,
+        "a start outside the boundary visits nothing"
+    )
+    try expect(
+        PathAncestorSearch.resolvingUpwards("../repo/env", startingAt: deep) == nil
+            && PathAncestorSearch.resolvingUpwards("/etc/hosts", startingAt: deep) == nil,
+        "the relative path itself may not climb or be absolute"
+    )
+}
+
 func run_path_tests() throws {
     try test_path_layout()
     try test_standard_path()
@@ -1350,6 +1398,7 @@ func run_path_tests() throws {
     try test_path_tree_difference_semantics()
     try test_path_walker()
     try test_ancestor_search_stops_at_root()
+    try test_ancestor_resolving_upwards()
     try test_path_error_semantics()
     try test_path_access_scan_withholds_denied()
 }
